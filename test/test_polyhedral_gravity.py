@@ -5,7 +5,7 @@ import gravann._polyhedral_labels as polyhedral_labels
 import gravann._mascon_labels as mascons_labels
 
 
-EROS_LP_FILE_NAME = './3dmeshes/eros_lp.pk'
+EROS_LP_FILE_NAME = './3dmeshes/eros.pk'
 EROS_MASCON_FILE_NAME = './mascons/eros.pk'
 
 
@@ -23,32 +23,34 @@ def mesh_data(filename):
 
 
 def test_eros_potential():
-    target_points = [[0.0, 0.0, 0.0]]
+    target_points = [[1.0, 1.0, 1.0]]
     target_points_tensor = torch.tensor(target_points)
 
-    # density = 1.49828e10
+    # Inverse of Gravity Constant 6.6743015×10−11
+    density = 1.49828e10
 
     mascon_points, mascon_masses = mascon_data(EROS_MASCON_FILE_NAME)
     vertices, triangles = mesh_data(EROS_LP_FILE_NAME)
 
     mascon_potential = mascons_labels.U_L(target_points_tensor, mascon_points, mascon_masses)
-    polyhedral_potential = polyhedral_labels.U_L(target_points, vertices, triangles, 1.0)
+    polyhedral_potential = polyhedral_labels.U_L(target_points, vertices, triangles, density)
 
     assert mascon_potential == polyhedral_potential, \
         f"Mascon {mascon_potential}; Polyhedral {polyhedral_potential}"
 
 
 def test_eros_acceleration():
-    target_points = [[0.0, 0.0, 0.0]]
+    target_points = [[1.0, 1.0, 1.0]]
     target_points_tensor = torch.tensor(target_points)
 
-    # density = 1.49828e10
+    # Inverse of Gravity Constant 6.6743015×10−11
+    density = 1.49828e10
 
     mascon_points, mascon_masses = mascon_data(EROS_MASCON_FILE_NAME)
     vertices, triangles = mesh_data(EROS_LP_FILE_NAME)
 
     mascon_acceleration = mascons_labels.ACC_L(target_points_tensor, mascon_points, mascon_masses)
-    polyhedral_acceleration = polyhedral_labels.ACC_L(target_points, vertices, triangles, 1.0)
+    polyhedral_acceleration = polyhedral_labels.ACC_L(target_points, vertices, triangles, density)
 
     assert all([m == p for m, p in zip(mascon_acceleration[0], polyhedral_acceleration[0])]), \
         f"Mascon {mascon_acceleration[0]}; Polyhedral {polyhedral_acceleration[0]}"
