@@ -10,3 +10,4 @@ dependencies:
 - jupyter
 - tqdm>=4.50.0
 - pandas
+- polyhedral-gravity-model
