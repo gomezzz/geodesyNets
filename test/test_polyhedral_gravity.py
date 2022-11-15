@@ -10,13 +10,13 @@ import gravann._mascon_labels as mascons_labels
 # The tested bodies
 TEST_FILENAMES = ["bennu", "churyumov-gerasimenko", "eros", "hollow", "itokawa", "planetesimal", "torus"]
 # The tested distances to the body center
-TEST_DISTANCES = [1, 5, 1e2, 5e2, 1e3, 5e3, 1e4]
+TEST_DISTANCES = [1.0, 5.0, 1e2, 5e2, 1e3, 5e3, 1e4]
 # The test epsilon needed for comparison between mascon & polyhedral model
 TEST_EPSILON = 1e-4
 # Exclude certain bodies with distance combinations from failing with the currently set TEST_EPSILON
 TEST_EXCLUDE = {
-    "hollow": [1],
-    "planetesimal": [1, 5]
+    "hollow": [1.0],
+    "planetesimal": [1.0, 5.0]
 }
 # ====================== TEST PARAMETERS ======================
 
