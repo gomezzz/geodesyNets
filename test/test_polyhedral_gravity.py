@@ -75,7 +75,8 @@ def test_compare_mascon_polyhedral_model(data, distance):
     # Set the print precision of torch for more reasonable messages
     torch.set_printoptions(precision=20)
     # Get the Mascon Parameters
-    mascon_points, mascon_masses = mascon_data
+    mascon_points, mascon_masses =  mascon_data
+    assert torch.sum(mascon_masses) == pytest.approx(1.0)
     # Get the Mesh Parameters
     vertices, triangles = mesh_data
 
