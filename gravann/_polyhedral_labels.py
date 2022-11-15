@@ -16,6 +16,9 @@ def U_L(target_points, mesh_vertices, mesh_edges, density=1.0):
     Returns:
         1-D array-like: a (N, 1) torch tensor containing the gravity potential (G=1) at the target points
     """
+    # Convert to numpy array, as the interface does not accept a torch tensor
+    if torch.is_tensor(target_points):
+        target_points = target_points.cpu().detach().numpy()
     result = polyhedral_gravity.evaluate(mesh_vertices, mesh_edges, density, target_points)
     return torch.tensor([potential for potential, acceleration, tensor in result])
 
@@ -33,5 +36,8 @@ def ACC_L(target_points, mesh_vertices, mesh_edges, density=1.0):
     Returns:
         1-D array-like: a (N, 3) torch tensor containing the acceleration (G=1) at the target points
     """
+    # Convert to numpy array, as the interface does not accept a torch tensor
+    if torch.is_tensor(target_points):
+        target_points = target_points.cpu().detach().numpy()
     result = polyhedral_gravity.evaluate(mesh_vertices, mesh_edges, density, target_points)
     return torch.tensor([acceleration for potential, acceleration, tensor in result])

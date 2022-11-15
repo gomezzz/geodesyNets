@@ -51,7 +51,7 @@ def get_data(file_name):
     # Compute the potential
     mascon_potential = torch.squeeze(mascons_labels.U_L(cartesian_points_tensor, mascon_points, mascon_masses))
     polyhedral_potential = torch.squeeze(
-        polyhedral_labels.U_L(cartesian_points, vertices, triangles, GRAVITY_CONSTANT_INVERSE))
+        polyhedral_labels.U_L(cartesian_points_tensor, vertices, triangles, GRAVITY_CONSTANT_INVERSE))
     # Compute the scaling factor as average around our normed body
     scaling_factor = torch.mean(mascon_potential / polyhedral_potential)
 
@@ -90,9 +90,9 @@ def test_compare_mascon_polyhedral_model(data, distance):
 
     # Compute the potential and the acceleration with the two model
     mascon_potential = torch.squeeze(mascons_labels.U_L(cartesian_points_tensor, mascon_points, mascon_masses))
-    polyhedral_potential = torch.squeeze(polyhedral_labels.U_L(cartesian_points, vertices, triangles, density))
+    polyhedral_potential = torch.squeeze(polyhedral_labels.U_L(cartesian_points_tensor, vertices, triangles, density))
     mascon_acceleration = torch.squeeze(mascons_labels.ACC_L(cartesian_points_tensor, mascon_points, mascon_masses))
-    polyhedral_acceleration = torch.squeeze(polyhedral_labels.ACC_L(cartesian_points, vertices, triangles, density))
+    polyhedral_acceleration = torch.squeeze(polyhedral_labels.ACC_L(cartesian_points_tensor, vertices, triangles, density))
 
     # Compare the results
     if not(body_name in TEST_EXCLUDE and distance in TEST_EXCLUDE[body_name]):
