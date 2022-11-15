@@ -38,6 +38,9 @@ from ._mesh_conversion import create_mesh_from_cloud, create_mesh_from_model
 # Import the labeling functions the mascons
 from ._mascon_labels import U_L, ACC_L, ACC_L_differential
 
+# Import the labeling functions of the polyhedral gravity model
+from ._polyhedral_labels import polyhedral_U_L, polyhedral_ACC_L
+
 # Import training utility functions
 from ._train import init_network, train_on_batch, run_training, load_model_run
 

@@ -3,8 +3,7 @@ import pickle as pk
 import torch
 import numpy as np
 import itertools
-import gravann._polyhedral_labels as polyhedral_labels
-import gravann._mascon_labels as mascons_labels
+import gravann
 
 # ====================== TEST PARAMETERS ======================
 # The tested bodies
@@ -49,9 +48,9 @@ def get_data(file_name):
     vertices, triangles = get_mesh_data(f"./3dmeshes/{file_name}.pk")
 
     # Compute the potential
-    mascon_potential = torch.squeeze(mascons_labels.U_L(cartesian_points_tensor, mascon_points, mascon_masses))
+    mascon_potential = torch.squeeze(gravann.U_L(cartesian_points_tensor, mascon_points, mascon_masses))
     polyhedral_potential = torch.squeeze(
-        polyhedral_labels.U_L(cartesian_points_tensor, vertices, triangles, GRAVITY_CONSTANT_INVERSE))
+        gravann.polyhedral_U_L(cartesian_points_tensor, vertices, triangles, GRAVITY_CONSTANT_INVERSE))
     # Compute the scaling factor as average around our normed body
     scaling_factor = torch.mean(mascon_potential / polyhedral_potential)
 
@@ -75,7 +74,7 @@ def test_compare_mascon_polyhedral_model(data, distance):
     # Set the print precision of torch for more reasonable messages
     torch.set_printoptions(precision=20)
     # Get the Mascon Parameters
-    mascon_points, mascon_masses =  mascon_data
+    mascon_points, mascon_masses = mascon_data
     assert torch.sum(mascon_masses) == pytest.approx(1.0)
     # Get the Mesh Parameters
     vertices, triangles = mesh_data
@@ -89,12 +88,13 @@ def test_compare_mascon_polyhedral_model(data, distance):
     cartesian_points_tensor = torch.tensor(cartesian_points)
 
     # Compute the potential and the acceleration with the two model
-    mascon_potential = torch.squeeze(mascons_labels.U_L(cartesian_points_tensor, mascon_points, mascon_masses))
-    polyhedral_potential = torch.squeeze(polyhedral_labels.U_L(cartesian_points_tensor, vertices, triangles, density))
-    mascon_acceleration = torch.squeeze(mascons_labels.ACC_L(cartesian_points_tensor, mascon_points, mascon_masses))
-    polyhedral_acceleration = torch.squeeze(polyhedral_labels.ACC_L(cartesian_points_tensor, vertices, triangles, density))
+    mascon_potential = torch.squeeze(gravann.U_L(cartesian_points_tensor, mascon_points, mascon_masses))
+    polyhedral_potential = torch.squeeze(gravann.polyhedral_U_L(cartesian_points_tensor, vertices, triangles, density))
+    mascon_acceleration = torch.squeeze(gravann.ACC_L(cartesian_points_tensor, mascon_points, mascon_masses))
+    polyhedral_acceleration = torch.squeeze(
+        gravann.polyhedral_ACC_L(cartesian_points_tensor, vertices, triangles, density))
 
     # Compare the results
-    if not(body_name in TEST_EXCLUDE and distance in TEST_EXCLUDE[body_name]):
+    if not (body_name in TEST_EXCLUDE and distance in TEST_EXCLUDE[body_name]):
         assert mascon_potential == pytest.approx(polyhedral_potential, abs=TEST_EPSILON)
         assert mascon_acceleration == pytest.approx(polyhedral_acceleration, abs=TEST_EPSILON)
