@@ -37,22 +37,26 @@ def get_mesh_data(filename):
         return pk.load(f)
 
 
-def get_data(file_name):
+def get_scaling_factor(mascon_points, mascon_masses, vertices, triangles):
     # Generate the input
     coordinates = np.array([-1.0, 1.0])
     cartesian_points = np.array(np.meshgrid(coordinates, coordinates, coordinates)).T.reshape(-1, 3)
     cartesian_points_tensor = torch.tensor(cartesian_points)
-
-    # Read the mascon & mesh data
-    mascon_points, mascon_masses = get_mascon_data(f"./mascons/{file_name}.pk")
-    vertices, triangles = get_mesh_data(f"./3dmeshes/{file_name}.pk")
-
-    # Compute the potential
+    # Evaluate the models
     mascon_potential = torch.squeeze(gravann.U_L(cartesian_points_tensor, mascon_points, mascon_masses))
     polyhedral_potential = torch.squeeze(
         gravann.polyhedral_U_L(cartesian_points_tensor, vertices, triangles, GRAVITY_CONSTANT_INVERSE))
     # Compute the scaling factor as average around our normed body
-    scaling_factor = torch.mean(mascon_potential / polyhedral_potential)
+    return torch.mean(mascon_potential / polyhedral_potential)
+
+
+def get_data(file_name):
+    # Read the mascon & mesh data
+    mascon_points, mascon_masses = get_mascon_data(f"./mascons/{file_name}.pk")
+    vertices, triangles = get_mesh_data(f"./3dmeshes/{file_name}.pk")
+
+    # Compute the scaling factor as average around our normed body
+    scaling_factor = get_scaling_factor(mascon_points, mascon_masses, vertices, triangles)
 
     # Pack everything together
     return (mascon_points, mascon_masses), (vertices, triangles), scaling_factor, file_name
