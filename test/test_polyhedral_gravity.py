@@ -9,13 +9,11 @@ import gravann
 # The tested bodies
 TEST_FILENAMES = ["bennu", "churyumov-gerasimenko", "eros", "hollow", "itokawa", "planetesimal", "torus"]
 # The tested distances to the body center
-TEST_DISTANCES = [1.0, 5.0, 1e2, 5e2, 1e3, 5e3, 1e4]
+TEST_DISTANCES = [1.0, 5.0, 1e2, 5e2, 1e3]
 # The test epsilon needed for comparison between mascon & polyhedral model
-TEST_EPSILON = 1e-4
+TEST_EPSILON = 1e-1
 # Exclude certain bodies with distance combinations from failing with the currently set TEST_EPSILON
 TEST_EXCLUDE = {
-    "hollow": [1.0],
-    "planetesimal": [1.0, 5.0]
 }
 # ====================== TEST PARAMETERS ======================
 
@@ -100,5 +98,5 @@ def test_compare_mascon_polyhedral_model(data, distance):
 
     # Compare the results
     if not (body_name in TEST_EXCLUDE and distance in TEST_EXCLUDE[body_name]):
-        assert mascon_potential == pytest.approx(polyhedral_potential, abs=TEST_EPSILON)
-        assert mascon_acceleration == pytest.approx(polyhedral_acceleration, abs=TEST_EPSILON)
+        assert mascon_potential == pytest.approx(polyhedral_potential, rel=TEST_EPSILON)
+        assert mascon_acceleration == pytest.approx(polyhedral_acceleration, rel=TEST_EPSILON)
