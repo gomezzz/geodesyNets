@@ -47,6 +47,19 @@ def load_sample(sample, use_differential=False):
     return mascon_points, mascon_masses_u, mascon_masses_nu
 
 
+def load_polyhedral_mesh(sample):
+    with open(f"./3dmeshes/{sample}.pk", "rb") as f:
+        return pk.load(f)
+
+
+def load_mascon_data(sample):
+    with open(f"./mascons/{sample}.pk", "rb") as file:
+        mascon_points, mascon_masses_u, name = pk.load(file)
+        mascon_points = torch.tensor(mascon_points)
+        mascon_masses_u = torch.tensor(mascon_masses_u)
+        return mascon_points, mascon_masses_u
+
+
 def save_results(loss_log, weighted_average_log, validation_results, model, folder):
     """Stores the results of a run
 

@@ -15,7 +15,7 @@ from ._integration import ACC_ld, ACC_trap, U_mc, U_ld, U_trap_opt, rho_trap
 from ._integration import compute_sobol_points, compute_integration_grid
 
 # Methods to load mascons etc.
-from ._io import load_sample
+from ._io import load_sample, load_polyhedral_mesh, load_mascon_data
 
 # Importing misc methods for 3D graphics
 from ._hulls import alpha_shape, ray_triangle_intersect, rays_triangle_intersect, is_outside, is_inside, is_outside_torch

@@ -22,19 +22,6 @@ TEST_EXCLUDE = {
 GRAVITY_CONSTANT_INVERSE = 1.49828e10
 
 
-def get_mascon_data(filename):
-    with open(filename, "rb") as file:
-        mascon_points, mascon_masses_u, name = pk.load(file)
-        mascon_points = torch.tensor(mascon_points)
-        mascon_masses_u = torch.tensor(mascon_masses_u)
-        return mascon_points, mascon_masses_u
-
-
-def get_mesh_data(filename):
-    with open(filename, "rb") as f:
-        return pk.load(f)
-
-
 def get_scaling_factor(mascon_points, mascon_masses, vertices, triangles):
     # Generate the input
     coordinates = np.array([-1.0, 1.0])
@@ -50,8 +37,8 @@ def get_scaling_factor(mascon_points, mascon_masses, vertices, triangles):
 
 def get_data(file_name):
     # Read the mascon & mesh data
-    mascon_points, mascon_masses = get_mascon_data(f"./mascons/{file_name}.pk")
-    vertices, triangles = get_mesh_data(f"./3dmeshes/{file_name}.pk")
+    mascon_points, mascon_masses = gravann.load_mascon_data(file_name)
+    vertices, triangles = gravann.load_polyhedral_mesh(file_name)
 
     # Compute the scaling factor as average around our normed body
     scaling_factor = get_scaling_factor(mascon_points, mascon_masses, vertices, triangles)
