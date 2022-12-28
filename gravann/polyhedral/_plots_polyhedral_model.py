@@ -1,23 +1,14 @@
-from ._sample_observation_points import get_target_point_sampler
-from ._mesh_conversion import create_mesh_from_cloud, create_mesh_from_model
-from ._integration import ACC_trap, U_trap_opt
-from ._mascon_labels import ACC_L, U_L
-from ._polyhedral_labels import polyhedral_ACC_L, polyhedral_U_L
-from ._hulls import is_outside_torch, is_outside
-from ._utils import unpack_triangle_mesh
-
-from matplotlib import pyplot as plt
-import matplotlib as mpl
-from matplotlib.lines import Line2D
-import matplotlib.colors as colors
-import torch
-import math
-import numpy as np
 import pickle as pk
+
+import matplotlib.colors as colors
+import numpy as np
 import pyvista as pv
-import pyvistaqt as pvqt
-from tqdm import tqdm
-from scipy.spatial.transform import Rotation as rotation
+import torch
+from matplotlib import pyplot as plt
+
+from gravann import ACC_L as MASCON_ACC_L, U_L as MASCON_U_L
+from gravann import get_target_point_sampler
+from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L
 
 pv.set_plot_theme("night")
 GRAVITY_CONSTANT_INVERSE = 1.49828e10
@@ -34,9 +25,9 @@ def _get_scaling_factor(mascon_points, mascon_masses, vertices, triangles):
     cartesian_points = np.array(np.meshgrid(coordinates, coordinates, coordinates)).T.reshape(-1, 3)
     cartesian_points_tensor = torch.tensor(cartesian_points)
     # Evaluate the models
-    mascon_potential = torch.squeeze(U_L(cartesian_points_tensor, mascon_points, mascon_masses))
+    mascon_potential = torch.squeeze(MASCON_U_L(cartesian_points_tensor, mascon_points, mascon_masses))
     polyhedral_potential = torch.squeeze(
-        polyhedral_U_L(cartesian_points_tensor, vertices, triangles, GRAVITY_CONSTANT_INVERSE))
+        POLYHEDRAL_U_L(cartesian_points_tensor, vertices, triangles, GRAVITY_CONSTANT_INVERSE))
     # Compute the scaling factor as average around our normed body
     return torch.mean(mascon_potential / polyhedral_potential)
 
@@ -52,7 +43,6 @@ def plot_polyhedral_mascon_acceleration(sample, mascon_points, mascon_masses, pl
         plane (str, optional): Either "XY","XZ" or "YZ". Defines  cross section. Defaults to "XY".
         altitude (float, optional): Altitude to compute error at. Defaults to 0.1.
         save_path (str, optional): Pass to store plot, if none will display. Defaults to None.
-        c (float, optional): Normalization constant. Defaults to 1.
         N (int, optional): Number of points to sample. Defaults to 5000.
         logscale (bool, optional): Logscale errors. Defaults to False.
         mascon_masses_nu (torch.tensor): non-uniform asteroid masses. Pass if using differential training
@@ -103,10 +93,11 @@ def plot_polyhedral_mascon_acceleration(sample, mascon_points, mascon_masses, pl
     # Compute accelerations in left points, then right points
     # for both network and mascon model
     batch_size = 100
-    mascon_label = ACC_L
-    polyhedral_label = polyhedral_ACC_L
+    mascon_label = MASCON_ACC_L
+    polyhedral_label = POLYHEDRAL_ACC_L
 
-    density = GRAVITY_CONSTANT_INVERSE * _get_scaling_factor(mascon_points, mascon_masses, mesh_vertices, mesh_triangles)
+    density = GRAVITY_CONSTANT_INVERSE * _get_scaling_factor(mascon_points, mascon_masses, mesh_vertices,
+                                                             mesh_triangles)
 
     for idx in range((len(points_left) // batch_size) + 1):
         indices = list(range(idx * batch_size, np.minimum((idx + 1) * batch_size, len(points_left))))

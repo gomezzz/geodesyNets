@@ -3,7 +3,7 @@ import polyhedral_gravity
 import torch
 
 
-def polyhedral_U_L(target_points, mesh_vertices, mesh_edges, density=1.0):
+def U_L(target_points, mesh_vertices, mesh_edges, density=1.0):
     """
     Computes the gravity potential (G=1) created by a mascon in the target points. (to be used as Label in the training)
 
@@ -23,7 +23,7 @@ def polyhedral_U_L(target_points, mesh_vertices, mesh_edges, density=1.0):
     return torch.tensor([potential for potential, acceleration, tensor in result])
 
 
-def polyhedral_ACC_L(target_points, mesh_vertices, mesh_edges, density=1.0):
+def ACC_L(target_points, mesh_vertices, mesh_edges, density=1.0):
     """
     Computes the acceleration due to the mascon at the target points. (to be used as Label in the training)
 

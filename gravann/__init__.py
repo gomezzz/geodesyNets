@@ -25,8 +25,6 @@ from ._plots import plot_mascon, plot_model_grid, plot_model_rejection, plot_mod
 from ._plots import plot_mesh, plot_model_mesh, plot_point_cloud_mesh, plot_points, plot_model_mascon_acceleration
 from ._plots import plot_model_vs_cloud_mesh, plot_gradients_per_layer, plot_model_vs_mascon_rejection, plot_model_vs_mascon_contours
 
-from ._plots_polyhedral_model import plot_polyhedral_mascon_acceleration
-
 # Importing the validation method
 from ._validation import validation, validation_results_unpack_df, compute_c_for_model
 from ._validation_mascon import validation_mascon
@@ -39,9 +37,6 @@ from ._mesh_conversion import create_mesh_from_cloud, create_mesh_from_model
 
 # Import the labeling functions the mascons
 from ._mascon_labels import U_L, ACC_L, ACC_L_differential
-
-# Import the labeling functions of the polyhedral gravity model
-from ._polyhedral_labels import polyhedral_U_L, polyhedral_ACC_L
 
 # Import training utility functions
 from ._train import init_network, train_on_batch, run_training, load_model_run
