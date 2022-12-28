@@ -5,7 +5,8 @@ import torch
 from matplotlib import pyplot as plt
 
 from gravann import ACC_L as MASCON_ACC_L, get_target_point_sampler, load_polyhedral_mesh
-from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, calculate_density, GRAVITY_CONSTANT_INVERSE
+from ._polyhedral_labels import ACC_L as POLYHEDRAL_ACC_L
+from ._polyhedral_utils import GRAVITY_CONSTANT_INVERSE, calculate_density
 
 pv.set_plot_theme("night")
 
