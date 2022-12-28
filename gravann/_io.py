@@ -1,9 +1,9 @@
-import torch
 import pickle as pk
-import numpy as np
-import matplotlib.pyplot as plt
 
-from ._utils import max_min_distance
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+
 from ._plots import plot_model_vs_mascon_contours, plot_model_rejection, plot_model_vs_mascon_rejection
 
 
@@ -25,7 +25,7 @@ def load_sample(sample, use_differential=False):
 
     if use_differential:
         try:
-            with open("mascons/"+sample[:-3]+"_nu.pk", "rb") as file:
+            with open("mascons/" + sample[:-3] + "_nu.pk", "rb") as file:
                 _, mascon_masses_nu, _ = pk.load(file)
             mascon_masses_nu = torch.tensor(mascon_masses_nu)
             print("Loaded non-uniform model")
@@ -47,12 +47,31 @@ def load_sample(sample, use_differential=False):
     return mascon_points, mascon_masses_u, mascon_masses_nu
 
 
-def load_polyhedral_mesh(sample):
+def load_polyhedral_mesh(sample: str) -> (np.ndarray, np.ndarray):
+    """Loads a polyhedral mesh for a given sample from the '3dmeshes' folder.
+
+    Args:
+        sample: the name of file/ sample
+
+    Returns:
+        tuple of vertices (N, 3), triangles (M, 3)
+
+    """
     with open(f"./3dmeshes/{sample}.pk", "rb") as f:
-        return pk.load(f)
+        vertices, triangles = pk.load(f)
+        return np.array(vertices), np.array(triangles)
 
 
-def load_mascon_data(sample):
+def load_mascon_data(sample: str) -> (torch.Tensor, torch.Tensor):
+    """Loads the mascon points and mascon masses for a given sample from the 'mascons' folder
+
+    Args:
+        sample: the name of the file/ sample
+
+    Returns:
+        tuple of mascon_points (N, 3), mascon_masses (N)
+
+    """
     with open(f"./mascons/{sample}.pk", "rb") as file:
         mascon_points, mascon_masses_u, name = pk.load(file)
         mascon_points = torch.tensor(mascon_points)
@@ -71,14 +90,15 @@ def save_results(loss_log, weighted_average_log, validation_results, model, fold
         folder (str): results folder of the run
     """
     print(f"Saving run results to {folder} ...", end="")
-    np.save(folder+"loss_log.npy", loss_log)
-    np.save(folder+"weighted_average_log.npy", loss_log)
+    np.save(folder + "loss_log.npy", loss_log)
+    np.save(folder + "weighted_average_log.npy", loss_log)
     torch.save(model.state_dict(), folder + "last_model.mdl")
     validation_results.to_csv(folder + "validation_results.csv", index=False)
     print("Done.")
 
 
-def save_plots(model, encoding, mascon_points, lr_log, loss_log, weighted_average_log, vision_loss_log, n_inferences, folder, c, N):
+def save_plots(model, encoding, mascon_points, lr_log, loss_log, weighted_average_log, vision_loss_log, n_inferences,
+               folder, c, N):
     """Creates plots using the model and stores them
 
     Args:
@@ -116,7 +136,7 @@ def save_plots(model, encoding, mascon_points, lr_log, loss_log, weighted_averag
     plt.ylabel("Loss")
     plt.legend(["Loss", "Weighted Average Loss",
                 "Vision Loss"])
-    plt.savefig(folder+"loss_plot.png", dpi=150)
+    plt.savefig(folder + "loss_plot.png", dpi=150)
     print("Done.")
 
     print("Creating LR plot...")
@@ -125,4 +145,4 @@ def save_plots(model, encoding, mascon_points, lr_log, loss_log, weighted_averag
     plt.semilogy(abscissa, lr_log)
     plt.xlabel("Thousands of model evaluations")
     plt.ylabel("LR")
-    plt.savefig(folder+"lr_plot.png", dpi=150)
+    plt.savefig(folder + "lr_plot.png", dpi=150)
