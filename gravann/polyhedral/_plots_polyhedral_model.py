@@ -1,35 +1,13 @@
-import pickle as pk
-
 import matplotlib.colors as colors
 import numpy as np
 import pyvista as pv
 import torch
 from matplotlib import pyplot as plt
 
-from gravann import ACC_L as MASCON_ACC_L, U_L as MASCON_U_L
-from gravann import get_target_point_sampler
-from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L
+from gravann import ACC_L as MASCON_ACC_L, get_target_point_sampler, load_polyhedral_mesh
+from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, calculate_density, GRAVITY_CONSTANT_INVERSE
 
 pv.set_plot_theme("night")
-GRAVITY_CONSTANT_INVERSE = 1.49828e10
-
-
-def _get_mesh_data(filename):
-    with open(filename, "rb") as f:
-        return pk.load(f)
-
-
-def _get_scaling_factor(mascon_points, mascon_masses, vertices, triangles):
-    # Generate the input
-    coordinates = np.array([-1.0, 1.0])
-    cartesian_points = np.array(np.meshgrid(coordinates, coordinates, coordinates)).T.reshape(-1, 3)
-    cartesian_points_tensor = torch.tensor(cartesian_points)
-    # Evaluate the models
-    mascon_potential = torch.squeeze(MASCON_U_L(cartesian_points_tensor, mascon_points, mascon_masses))
-    polyhedral_potential = torch.squeeze(
-        POLYHEDRAL_U_L(cartesian_points_tensor, vertices, triangles, GRAVITY_CONSTANT_INVERSE))
-    # Compute the scaling factor as average around our normed body
-    return torch.mean(mascon_potential / polyhedral_potential)
 
 
 def plot_polyhedral_mascon_acceleration(sample, mascon_points, mascon_masses, plane="XY",
@@ -40,7 +18,7 @@ def plot_polyhedral_mascon_acceleration(sample, mascon_points, mascon_masses, pl
         sample (str): Path to sample mesh
         mascon_points (2-D array-like): an (N, 3) array-like object containing the coordinates of the mascon points.
         mascon_masses (1-D array-like): a (N,) array-like object containing the values for the mascon masses.
-        plane (str, optional): Either "XY","XZ" or "YZ". Defines  cross section. Defaults to "XY".
+        plane (str, optional): Either "XY","XZ" or "YZ". Defines cross-section. Defaults to "XY".
         altitude (float, optional): Altitude to compute error at. Defaults to 0.1.
         save_path (str, optional): Pass to store plot, if none will display. Defaults to None.
         N (int, optional): Number of points to sample. Defaults to 5000.
@@ -53,7 +31,7 @@ def plot_polyhedral_mascon_acceleration(sample, mascon_points, mascon_masses, pl
         plt.Figure: created plot
     """
     # Get the vertices and triangles
-    mesh_vertices, mesh_triangles = _get_mesh_data(sample)
+    mesh_vertices, mesh_triangles = load_polyhedral_mesh(sample)
 
     print("Sampling points at altitude")
     points = get_target_point_sampler(N, method="altitude", bounds=[
@@ -96,8 +74,7 @@ def plot_polyhedral_mascon_acceleration(sample, mascon_points, mascon_masses, pl
     mascon_label = MASCON_ACC_L
     polyhedral_label = POLYHEDRAL_ACC_L
 
-    density = GRAVITY_CONSTANT_INVERSE * _get_scaling_factor(mascon_points, mascon_masses, mesh_vertices,
-                                                             mesh_triangles)
+    density = GRAVITY_CONSTANT_INVERSE * calculate_density(mesh_vertices, mesh_triangles)
 
     for idx in range((len(points_left) // batch_size) + 1):
         indices = list(range(idx * batch_size, np.minimum((idx + 1) * batch_size, len(points_left))))

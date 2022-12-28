@@ -1,9 +1,19 @@
 import numpy as np
 
+""" The GRAVITY CONSTANT G [N * m^2 * kg^-2]"""
+GRAVITY_CONSTANT = 6.6743015e-11
+
+""" The inverse of the GRAVITY CONSTANT G """
+GRAVITY_CONSTANT_INVERSE = 1.0 / GRAVITY_CONSTANT
+
 
 def calculate_volume(vertices: np.ndarray, faces: np.ndarray) -> float:
     """
     Calculates the volume for a given polyhedron consisting of vertices and triangular faces.
+
+    The volume of polyhedron consisting of triangles can be calculated by summing up the
+    determinant of each 3x3 matrix (consisting of the 3 corners) and dividing the result by 6.
+
     Args:
         vertices: an (N, 3) array-like
         faces: an (M, 3) array-like
@@ -11,9 +21,8 @@ def calculate_volume(vertices: np.ndarray, faces: np.ndarray) -> float:
     Returns:
         the volume of the polyhedron
     """
-    faces_resolved = np.array([np.array([faces[x], faces[y], faces[z]]) for x, y, z in vertices])
-    
-    return 0.0
+    faces_resolved = np.array([[vertices[x], vertices[y], vertices[z]] for x, y, z in faces])
+    return np.linalg.det(faces_resolved).sum() / 6.0
 
 
 def calculate_density(vertices: np.ndarray, faces: np.ndarray, mass: float = 1.0) -> float:
