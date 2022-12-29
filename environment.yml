@@ -1,24 +1,25 @@
 name: geodesynet
 channels:
-- conda-forge
-- pytorch
+  - conda-forge
+  - pytorch
 dependencies:
-- python=3.8
-- ipython
-- scikit-learn
-- numpy
-- matplotlib
-- jupyter
-- tqdm>=4.50.0
-- pandas
-- polyhedral-gravity-model
-- pytorch
-- torchvision
-- torchaudio
-- cudatoolkit=11.3
-- pytest
-- pip
-- pip:
-    - sobol_seq
-    - pyvista
-    - pyvistaqt
+  - python=3.8
+  - ipython
+  - scikit-learn
+  - numpy
+  - matplotlib
+  - jupyter
+  - tqdm>=4.50.0
+  - pandas
+  - polyhedral-gravity-model
+  - pytorch
+  - torchvision
+  - torchaudio
+  - cudatoolkit=11.3
+  - pytest
+  - pytest-xdist
+  - pip
+  - pip:
+      - sobol_seq
+      - pyvista
+      - pyvistaqt
