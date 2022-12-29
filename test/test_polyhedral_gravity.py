@@ -1,28 +1,29 @@
 import itertools
 
-import numpy as np
+import numpy.random
 import pytest
 import torch
 
-from gravann import ACC_L as MASCON_ACC_L, U_L as MASCON_U_L, load_mascon_data, load_polyhedral_mesh
+from gravann import ACC_L as MASCON_ACC_L, U_L as MASCON_U_L, load_mascon_data, load_polyhedral_mesh, \
+    get_target_point_sampler
 from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L, calculate_density, \
     GRAVITY_CONSTANT_INVERSE
 
 # ====================== TEST PARAMETERS ======================
 # The tested bodies
-TEST_FILENAMES = ["bennu", "churyumov-gerasimenko", "eros", "hollow", "itokawa", "planetesimal", "torus"]
+TEST_FILENAMES = ["bennu", "churyumov-gerasimenko", "eros", "hollow", "itokawa", "torus"]
 # The tested distances to the body center
-TEST_DISTANCES = [1.0, 5.0, 1e2, 5e2, 1e3]
-# The test epsilon needed for comparison between mascon & polyhedral model
-TEST_EPSILON = 1e-3
+TEST_DISTANCES = [1e-1, 5e-1, 1.0, 5.0, 1e2, 5e2]
+# The test relative error needed for comparison between mascon & polyhedral model
+TEST_EPSILON = 1.0
+# The number of points per body per altitude
+TEST_POINTS_PER_BATCH = 100
+# The seed for the test cases
+TEST_SEED = 0
 # Exclude certain bodies with distance combinations from failing with the currently set TEST_EPSILON
 TEST_EXCLUDE = {
-    "churyumov-gerasimenko": [1000],
-    "eros": [1000],
-    "hollow": [1],
-    "itokawa": [1000],
-    "planetesimal": [1, 5],
-    "torus": [1000]
+    "itokawa": [1e-1],
+    "hollow": [1.0]
 }
 
 
@@ -70,21 +71,30 @@ def test_compare_mascon_polyhedral_model(data, distance):
     # First assert that the mass of the mascon is actually normed and equals one (1.0)
     assert torch.sum(mascon_masses) == pytest.approx(1.0)
 
+    # Fix the seed for reproducibility
+    numpy.random.seed(0)
+
+    # Get a function to sample the input points
+    get_target_point = get_target_point_sampler(TEST_POINTS_PER_BATCH,
+                                                'altitude',
+                                                [distance],
+                                                limit_shape_to_asteroid=f"./3dmeshes/{body_name}.pk",
+                                                replace=True,
+                                                seed=TEST_SEED)
+    # The actual sample points
+    target_points = get_target_point()
+
     # This is just a scaling factor: The solved triple integral is multiplied by the density and the gravity constant
     # In order to set the gravity constant G = 1, we give its inverse to polyhedral model
     polyhedral_gravity_factor = GRAVITY_CONSTANT_INVERSE * density
 
-    coordinates = np.array([-distance, distance])
-    cartesian_points = np.array(np.meshgrid(coordinates, coordinates, coordinates)).T.reshape(-1, 3)
-    cartesian_points_tensor = torch.tensor(cartesian_points)
-
     # Compute the potential and the acceleration with the two model
-    mascon_potential = torch.squeeze(MASCON_U_L(cartesian_points_tensor, mascon_points, mascon_masses))
+    mascon_potential = torch.squeeze(MASCON_U_L(target_points, mascon_points, mascon_masses)) * -1.0
     polyhedral_potential = torch.squeeze(
-        POLYHEDRAL_U_L(cartesian_points_tensor, vertices, triangles, polyhedral_gravity_factor)) * -1.0
-    mascon_acceleration = torch.squeeze(MASCON_ACC_L(cartesian_points_tensor, mascon_points, mascon_masses))
+        POLYHEDRAL_U_L(target_points, vertices, triangles, polyhedral_gravity_factor))
+    mascon_acceleration = torch.squeeze(MASCON_ACC_L(target_points, mascon_points, mascon_masses)) * -1.0
     polyhedral_acceleration = torch.squeeze(
-        POLYHEDRAL_ACC_L(cartesian_points_tensor, vertices, triangles, polyhedral_gravity_factor)) * -1.0
+        POLYHEDRAL_ACC_L(target_points, vertices, triangles, polyhedral_gravity_factor))
 
     # Compare the results
     if not (body_name in TEST_EXCLUDE and distance in TEST_EXCLUDE[body_name]):

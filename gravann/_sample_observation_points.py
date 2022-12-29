@@ -1,20 +1,20 @@
-import torch
-import matplotlib.pyplot as plt
-import numpy as np
 import os
 import pickle as pk
+
+import numpy as np
 import pyvista as pv
-import warnings
+import torch
 from scipy.spatial import KDTree
 
+from ._hulls import is_outside_torch
 from ._utils import unpack_triangle_mesh, get_asteroid_bounding_box
-from ._hulls import is_outside_torch, is_outside
 
 # There is no torch.pi so we define it here
 torch.pi = torch.acos(torch.zeros(1)).item() * 2  # which is 3.1415927410125732
 
 
-def get_target_point_sampler(N, method="cubical", bounds=[1.1, 1.2], limit_shape_to_asteroid=None, replace=True):
+def get_target_point_sampler(N, method="cubical", bounds=[1.1, 1.2], limit_shape_to_asteroid=None, replace=True,
+                             seed=None):
     """Get a function to sample N target points from. Points may differ each
     call depending on selected method. See specific implementations for details.
 
@@ -28,6 +28,7 @@ def get_target_point_sampler(N, method="cubical", bounds=[1.1, 1.2], limit_shape
                                                 or use for altitude sampling
         replace (bool, optional): Only altitude. If points are allowed to be sampled twice in the same batch or not
                                   (for false maximum sample points = #triangles in mesh)
+        seed (int): inits the point selection choice with a specific seed (only for 'altitude')
 
     Returns:
         lambda: function to call to get sampled target points
@@ -46,9 +47,10 @@ def get_target_point_sampler(N, method="cubical", bounds=[1.1, 1.2], limit_shape
     # Create domain limiter if passed
     else:
         if method == "altitude":
-            return _get_altitude_sampler(N, bounds[0], limit_shape_to_asteroid, replace=replace)
+            return _get_altitude_sampler(N, bounds[0], limit_shape_to_asteroid, replace=replace, seed=seed)
         elif method == "radial_projection":
-            return lambda: _get_radial_projection_sampler(N, altitude=bounds, limit_shape_to_asteroid=limit_shape_to_asteroid)
+            return lambda: _get_radial_projection_sampler(N, altitude=bounds,
+                                                          limit_shape_to_asteroid=limit_shape_to_asteroid)
         else:
             return _get_asteroid_limited_sampler(
                 N, method, bounds, limit_shape_to_asteroid)
@@ -84,18 +86,18 @@ def _get_radial_projection_sampler(steps, altitude, limit_shape_to_asteroid, deb
     # Pick radius as maximal extension of the asteroid in one dim.
     # Note this may cause problems for asteroids that extend beyond the sphere with that radius.
     # Therefore we later discard points which accidentally end up in the asteroid.
-    r_a = np.maximum(np.maximum(bb[0][1]-bb[0][0], bb[1][1]-bb[1][0]),
-                     bb[2][1]-bb[2][0]) / 2.0
+    r_a = np.maximum(np.maximum(bb[0][1] - bb[0][0], bb[1][1] - bb[1][0]),
+                     bb[2][1] - bb[2][0]) / 2.0
 
     N = len(mesh_vertices)
-    points = np.zeros([steps*N, 3])
+    points = np.zeros([steps * N, 3])
 
     # Sample different altitudes
-    for idx, grid_point in enumerate(np.linspace(altitude[0]+1e-4, altitude[1], steps)):
+    for idx, grid_point in enumerate(np.linspace(altitude[0] + 1e-4, altitude[1], steps)):
         # Sample points by sampling random altitude between altitude[0] and altitude[1] times r_a
         current_altitude = grid_point * r_a
-        points[idx*N:(idx+1)*N, :] = mesh_vertices + \
-            (np.asarray(mesh_vertices) - center) * current_altitude
+        points[idx * N:(idx + 1) * N, :] = mesh_vertices + \
+                                           (np.asarray(mesh_vertices) - center) * current_altitude
 
     if debug_plot:
         mesh_faces = [[3, t[0], t[1], t[2]] for t in mesh_triangles]
@@ -110,7 +112,8 @@ def _get_radial_projection_sampler(steps, altitude, limit_shape_to_asteroid, deb
     return torch.tensor(points)
 
 
-def _get_altitude_sampler(N, altitude, limit_shape_to_asteroid, plot_normals=False, discard_points_inside=True, replace=True):
+def _get_altitude_sampler(N, altitude, limit_shape_to_asteroid, plot_normals=False, discard_points_inside=True,
+                          replace=True, seed=None):
     """This creates a sampler that samples from the triangle centers of the passed mesh + their normal
 
     Args:
@@ -121,6 +124,7 @@ def _get_altitude_sampler(N, altitude, limit_shape_to_asteroid, plot_normals=Fal
         discard_points_inside (bool, optional): Will discard all points that lie inside the asteroid (can happen for nonconvex ones). Defaults to True.
         replace (bool, optional): If points are allowed to be sampled twice in the same batch or not
                                   (for false maximum sample points = #triangles in mesh)
+        seed (int): inits the point selection choice with a specific seed
 
     Returns:
         func: sampler function
@@ -163,7 +167,7 @@ def _get_altitude_sampler(N, altitude, limit_shape_to_asteroid, plot_normals=Fal
     eps = 1e-4  # maximum altitude error
     kd_tree = KDTree(centers)
     distances, _ = kd_tree.query(points_at_altitude, k=1)
-    distance_correct = np.abs(altitude-distances) < eps
+    distance_correct = np.abs(altitude - distances) < eps
     print("Discarding " + str(len(distance_correct) - np.sum(distance_correct)) + " of " + str(len(distance_correct)) +
           " points in altitude sampler which did not meet requested altitude.")
     points_at_altitude = points_at_altitude[distance_correct]
@@ -177,11 +181,13 @@ def _get_altitude_sampler(N, altitude, limit_shape_to_asteroid, plot_normals=Fal
         del triangles
         # print("Now len=", len(points_at_altitude))
 
-    return lambda: torch.tensor(points_at_altitude[np.random.choice(
+    generator: np.random.Generator = np.random.default_rng(seed=seed)
+    return lambda: torch.tensor(points_at_altitude[generator.choice(
         points_at_altitude.shape[0], N, replace=replace), :])
 
 
-def _get_asteroid_limited_sampler(N, method="cubical", bounds=[1.1, 1.2], limit_shape_to_asteroid=None, sample_step_size=32):
+def _get_asteroid_limited_sampler(N, method="cubical", bounds=[1.1, 1.2], limit_shape_to_asteroid=None,
+                                  sample_step_size=32):
     """Get a function to sample N target points from. Points may differ each
     call depending on selected method. See specific implementations for details.
 
@@ -208,9 +214,11 @@ def _get_asteroid_limited_sampler(N, method="cubical", bounds=[1.1, 1.2], limit_
 
     # Create a sampler to get some points
     if method == "cubical":
-        def sampler(): return _sample_cubical(sample_step_size, bounds)
+        def sampler():
+            return _sample_cubical(sample_step_size, bounds)
     elif method == "spherical":
-        def sampler(): return _sample_spherical(sample_step_size, bounds)
+        def sampler():
+            return _sample_spherical(sample_step_size, bounds)
 
     # Create a new sampler inside the sampler so to speak
     return lambda: _get_N_points_outside_asteroid(N, sampler, triangles, sample_step_size)
@@ -229,7 +237,7 @@ def _get_N_points_outside_asteroid(N, sampler, triangles, sample_step_size):
         torch tensor: sampled points
     """
     # We allocate a few more just to avoid having to check, will discard in return
-    points = torch.zeros([N+sample_step_size, 3],
+    points = torch.zeros([N + sample_step_size, 3],
                          device=os.environ["TORCH_DEVICE"])
     found_points = 0
 
@@ -245,7 +253,7 @@ def _get_N_points_outside_asteroid(N, sampler, triangles, sample_step_size):
         new_points = len(candidates_outside)
         if new_points > 0:
             points[found_points:found_points +
-                   new_points, :] = candidates_outside
+                                new_points, :] = candidates_outside
             found_points += new_points
 
     return points[:N]
@@ -263,12 +271,12 @@ def _get_spherical_grid(N, radius=1.73205):
         [torch tensor]: Points on the sphere.
     """
     N = int(np.round(np.sqrt(N)))  # 2d grid
-    offset = torch.pi / (N+2)  # Use an offset to avoid singularities at poles
+    offset = torch.pi / (N + 2)  # Use an offset to avoid singularities at poles
     grid_1d = torch.linspace(
-        offset, torch.pi-offset, N, device=os.environ["TORCH_DEVICE"])
+        offset, torch.pi - offset, N, device=os.environ["TORCH_DEVICE"])
     phi, theta = torch.meshgrid(grid_1d, grid_1d)
-    x = radius * torch.sin(phi) * torch.cos(2*theta)
-    y = radius * torch.sin(phi) * torch.sin(2*theta)
+    x = radius * torch.sin(phi) * torch.cos(2 * theta)
+    y = radius * torch.sin(phi) * torch.sin(2 * theta)
     z = radius * torch.cos(phi)
     points = torch.stack((x.flatten(), y.flatten(), z.flatten())).transpose(
         0, 1).to(os.environ["TORCH_DEVICE"])
@@ -305,26 +313,23 @@ def _sample_spherical(N, radius_bounds=[1.1, 1.2]):
     Returns:
         Torch tensor: Sampled points
     """
-    theta = 2.0 * torch.pi * torch.rand(N, 1,
-                                        device=os.environ["TORCH_DEVICE"])
+    theta = 2.0 * torch.pi * torch.rand(N, 1, device=os.environ["TORCH_DEVICE"])
 
     # The acos here allows us to sample uniformly on the sphere
-    phi = torch.acos(1.0 - 2.0 * torch.rand(N, 1,
-                                            device=os.environ["TORCH_DEVICE"]))
+    phi = torch.acos(1.0 - 2.0 * torch.rand(N, 1, device=os.environ["TORCH_DEVICE"]))
 
     minimal_radius_scale = radius_bounds[0] / radius_bounds[1]
     # Create uniform between
     uni = minimal_radius_scale + \
-        (1.0 - minimal_radius_scale) * \
-        torch.rand(N, 1, device=os.environ["TORCH_DEVICE"])
-    r = radius_bounds[1] * torch.pow(uni, 1/3)
+          (1.0 - minimal_radius_scale) * \
+          torch.rand(N, 1, device=os.environ["TORCH_DEVICE"])
+    r = radius_bounds[1] * torch.pow(uni, 1 / 3)
 
     x = r * torch.sin(phi) * torch.cos(theta)
     y = r * torch.sin(phi) * torch.sin(theta)
     z = r * torch.cos(phi)
 
-    points = torch.stack((x.flatten(), y.flatten(), z.flatten())).transpose(
-        0, 1).to(os.environ["TORCH_DEVICE"])
+    points = torch.stack((x.flatten(), y.flatten(), z.flatten())).transpose(0, 1).to(os.environ["TORCH_DEVICE"])
 
     if os.environ["TORCH_DEVICE"] == "cpu":
         return points
@@ -343,15 +348,15 @@ def _sample_cubical(N, scale_bounds=[1.1, 1.2]):
         Torch tensor: Sampled points
     """
     # Approximation of percentage points in Unitsphere
-    approx = (scale_bounds[0] / scale_bounds[1])**3
+    approx = (scale_bounds[0] / scale_bounds[1]) ** 3
 
     # Sample twice the expected number of points necessary to achieve N
     approx_necessary_samples = int(2 * N * (1.0 / (1.0 - approx)))
     points = (torch.rand(approx_necessary_samples, 3,
-                         device=os.environ["TORCH_DEVICE"])*2 - 1)*scale_bounds[1]
+                         device=os.environ["TORCH_DEVICE"]) * 2 - 1) * scale_bounds[1]
 
     # Discard points inside unitcube
-    domain = scale_bounds[0]*torch.tensor(
+    domain = scale_bounds[0] * torch.tensor(
         [[-1, 1], [-1, 1], [-1, 1]], device=os.environ["TORCH_DEVICE"])
     points = _limit_to_domain(points, domain)
 
