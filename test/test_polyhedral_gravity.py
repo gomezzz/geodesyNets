@@ -1,6 +1,5 @@
 import itertools
 
-import numpy.random
 import pytest
 import torch
 
@@ -70,9 +69,6 @@ def test_compare_mascon_polyhedral_model(data, distance):
 
     # First assert that the mass of the mascon is actually normed and equals one (1.0)
     assert torch.sum(mascon_masses) == pytest.approx(1.0)
-
-    # Fix the seed for reproducibility
-    numpy.random.seed(0)
 
     # Get a function to sample the input points
     get_target_point = get_target_point_sampler(TEST_POINTS_PER_BATCH,
