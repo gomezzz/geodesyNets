@@ -29,8 +29,8 @@ TEST_EXCLUDE = {
 
 # ======================= SETUP UTILITY =======================
 def get_data(sample: str):
-    """
-    Utility function. Gets the parameters for a sample body
+    """Utility function. Gets the parameters for a sample body
+    
     Args:
         sample: the name of the sample
 
