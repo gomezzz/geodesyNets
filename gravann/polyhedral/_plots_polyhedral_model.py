@@ -4,27 +4,23 @@ import pyvista as pv
 import torch
 from matplotlib import pyplot as plt
 
-from gravann import ACC_L as MASCON_ACC_L, get_target_point_sampler, load_polyhedral_mesh
+from gravann import ACC_L as MASCON_ACC_L, get_target_point_sampler, load_polyhedral_mesh, load_mascon_data
 from ._polyhedral_labels import ACC_L as POLYHEDRAL_ACC_L
 from ._polyhedral_utils import GRAVITY_CONSTANT_INVERSE, calculate_density
 
 pv.set_plot_theme("night")
 
 
-def plot_polyhedral_mascon_acceleration(sample, mascon_points, mascon_masses, plane="XY",
-                                        altitude=0.1, save_path=None, N=5000, logscale=False, mascon_masses_nu=None):
+def plot_polyhedral_mascon_acceleration(sample, plane="XY", altitude=0.1, save_path=None, N=5000, logscale=False):
     """Plots the relative error of the computed acceleration between mascon model and neural network
 
     Args:
         sample (str): Path to sample mesh
-        mascon_points (2-D array-like): an (N, 3) array-like object containing the coordinates of the mascon points.
-        mascon_masses (1-D array-like): a (N,) array-like object containing the values for the mascon masses.
         plane (str, optional): Either "XY","XZ" or "YZ". Defines cross-section. Defaults to "XY".
         altitude (float, optional): Altitude to compute error at. Defaults to 0.1.
         save_path (str, optional): Pass to store plot, if none will display. Defaults to None.
         N (int, optional): Number of points to sample. Defaults to 5000.
         logscale (bool, optional): Logscale errors. Defaults to False.
-        mascon_masses_nu (torch.tensor): non-uniform asteroid masses. Pass if using differential training
     Raises:
         ValueError: On wrong input
 
@@ -33,6 +29,8 @@ def plot_polyhedral_mascon_acceleration(sample, mascon_points, mascon_masses, pl
     """
     # Get the vertices and triangles
     mesh_vertices, mesh_triangles = load_polyhedral_mesh(sample)
+    # Get the mascon data
+    mascon_points, mascon_masses = load_mascon_data(sample)
 
     print("Sampling points at altitude")
     points = get_target_point_sampler(N, method="altitude", bounds=[
