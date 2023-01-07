@@ -73,7 +73,7 @@ def plot_polyhedral_mascon_acceleration(sample, plane="XY", altitude=0.1, save_p
     mascon_label = MASCON_ACC_L
     polyhedral_label = POLYHEDRAL_ACC_L
 
-    density = GRAVITY_CONSTANT_INVERSE * calculate_density(mesh_vertices, mesh_triangles)
+    density = calculate_density(mesh_vertices, mesh_triangles)
 
     for idx in range((len(points_left) // batch_size) + 1):
         indices = list(range(idx * batch_size, np.minimum((idx + 1) * batch_size, len(points_left))))
