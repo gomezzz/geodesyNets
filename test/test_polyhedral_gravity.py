@@ -2,11 +2,11 @@ import itertools
 
 import pytest
 import torch
+from polyhedral_gravity.utility import check_mesh
 
 from gravann import ACC_L as MASCON_ACC_L, U_L as MASCON_U_L, load_mascon_data, load_polyhedral_mesh, \
     get_target_point_sampler
-from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L, calculate_density, \
-    GRAVITY_CONSTANT_INVERSE
+from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L, calculate_density
 
 # ====================== TEST PARAMETERS ======================
 # The tested bodies
@@ -59,6 +59,9 @@ TEST_NAMES = [f"{name}-{distance}" for name, distance in itertools.product(TEST_
 # ======================== TEST CASE ==========================
 @pytest.mark.parametrize("data, distance", TEST_PARAMETERS, ids=TEST_NAMES)
 def test_compare_mascon_polyhedral_model(data, distance):
+    """
+    Compares the mascon model to the polyhedral gravity models results
+    """
     mascon_data, mesh_data, density, body_name = data
     # Set the print precision of torch for more reasonable messages
     torch.set_printoptions(precision=20)
@@ -80,19 +83,24 @@ def test_compare_mascon_polyhedral_model(data, distance):
     # The actual sample points
     target_points = get_target_point()
 
-    # This is just a scaling factor: The solved triple integral is multiplied by the density and the gravity constant
-    # In order to set the gravity constant G = 1, we give its inverse to polyhedral model
-    polyhedral_gravity_factor = GRAVITY_CONSTANT_INVERSE * density
-
     # Compute the potential and the acceleration with the two model
-    mascon_potential = torch.squeeze(MASCON_U_L(target_points, mascon_points, mascon_masses)) * -1.0
+    mascon_potential = torch.squeeze(MASCON_U_L(target_points, mascon_points, mascon_masses))
     polyhedral_potential = torch.squeeze(
-        POLYHEDRAL_U_L(target_points, vertices, triangles, polyhedral_gravity_factor))
-    mascon_acceleration = torch.squeeze(MASCON_ACC_L(target_points, mascon_points, mascon_masses)) * -1.0
+        POLYHEDRAL_U_L(target_points, vertices, triangles, density))
+    mascon_acceleration = torch.squeeze(MASCON_ACC_L(target_points, mascon_points, mascon_masses))
     polyhedral_acceleration = torch.squeeze(
-        POLYHEDRAL_ACC_L(target_points, vertices, triangles, polyhedral_gravity_factor))
+        POLYHEDRAL_ACC_L(target_points, vertices, triangles, density))
 
     # Compare the results
     if not (body_name in TEST_EXCLUDE and distance in TEST_EXCLUDE[body_name]):
         assert mascon_potential == pytest.approx(polyhedral_potential, rel=TEST_EPSILON)
         assert mascon_acceleration == pytest.approx(polyhedral_acceleration, rel=TEST_EPSILON)
+
+
+@pytest.mark.parametrize("sample", TEST_FILENAMES, ids=TEST_FILENAMES)
+def test_check_input_mesh(sample):
+    """
+    Checks that the input mesh's plane unit normals are outwards pointing
+    """
+    vertices, triangles = load_polyhedral_mesh(sample)
+    assert check_mesh(vertices, triangles)
