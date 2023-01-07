@@ -34,7 +34,7 @@ def plot_polyhedral_mascon_acceleration(sample, plane="XY", altitude=0.1, save_p
 
     print("Sampling points at altitude")
     points = get_target_point_sampler(N, method="altitude", bounds=[
-        altitude], limit_shape_to_asteroid=sample, replace=False)()
+        altitude], limit_shape_to_asteroid=f"./3dmeshes/{sample}.pk", replace=False)()
 
     print("Got ", len(points), " points.")
     if plane == "XY":
