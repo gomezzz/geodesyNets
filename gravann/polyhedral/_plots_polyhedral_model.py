@@ -4,25 +4,34 @@ import pyvista as pv
 import torch
 from matplotlib import pyplot as plt
 
-from .._mascon_labels import ACC_L as MASCON_ACC_L
-from .._io import load_polyhedral_mesh, load_mascon_data
-from .._sample_observation_points import get_target_point_sampler
 from ._polyhedral_labels import ACC_L as POLYHEDRAL_ACC_L
-from ._polyhedral_utils import GRAVITY_CONSTANT_INVERSE, calculate_density
+from ._polyhedral_utils import calculate_density
+from .. import ACC_trap
+from .._io import load_polyhedral_mesh, load_mascon_data
+from .._mascon_labels import ACC_L as MASCON_ACC_L
+from .._sample_observation_points import get_target_point_sampler
 
 pv.set_plot_theme("night")
 
 
-def plot_polyhedral_mascon_acceleration(sample, plane="XY", altitude=0.1, save_path=None, N=5000, logscale=False):
-    """Plots the relative error of the computed acceleration between mascon model and neural network
+def plot_compare_acceleration(sample: str, compare_mode: (str, str), **kwargs):
+    """Plots the relative error of the computed acceleration between a model/ ground truth and a model/ ground truth
 
     Args:
-        sample (str): Path to sample mesh
-        plane (str, optional): Either "XY","XZ" or "YZ". Defines cross-section. Defaults to "XY".
-        altitude (float, optional): Altitude to compute error at. Defaults to 0.1.
-        save_path (str, optional): Pass to store plot, if none will display. Defaults to None.
-        N (int, optional): Number of points to sample. Defaults to 5000.
-        logscale (bool, optional): Logscale errors. Defaults to False.
+        sample: name of sampple body (acts a path to a mesh and mascon file if required)
+        compare_mode: tuple strings can be either 'mascon', 'polyhedral' or 'model'
+
+
+    Keyword Args:
+        model_1 [(model, encoding, c)]: needs to be specified if the first element of compare is set to 'model'
+        model_2 [(model, encoding, c)]: needs to be specified if the second element of compare is set to 'model'
+        plane (str): Either "XY","XZ" or "YZ". Defines  cross-section. Defaults to "XY".
+        altitude (float): Altitude to compute error at. Defaults to 0.1.
+        save_path (str): Pass to store plot, if none will display. Defaults to None.
+        N (int): Number of points to sample. Defaults to 5000.
+        logscale (bool): Logscale errors. Defaults to False.
+
+
     Raises:
         ValueError: On wrong input
 
@@ -31,14 +40,60 @@ def plot_polyhedral_mascon_acceleration(sample, plane="XY", altitude=0.1, save_p
     """
     # Get the vertices and triangles
     mesh_vertices, mesh_triangles = load_polyhedral_mesh(sample)
+    density = calculate_density(mesh_vertices, mesh_triangles)
     # Get the mascon data
     mascon_points, mascon_masses = load_mascon_data(sample)
 
-    print("Sampling points at altitude")
-    points = get_target_point_sampler(N, method="altitude", bounds=[
-        altitude], limit_shape_to_asteroid=f"./3dmeshes/{sample}.pk", replace=False)()
+    # Get the models
+    model1, encoding1, c1 = kwargs.get('model_1', (None, None, 1))
+    model2, encoding2, c2 = kwargs.get('model_2', (None, None, 1))
 
-    print("Got ", len(points), " points.")
+    integrator = ACC_trap
+    label_dict1 = {
+        'mascon': lambda points: MASCON_ACC_L(points, mascon_points, mascon_masses),
+        'polyhedral': lambda points: POLYHEDRAL_ACC_L(points, mesh_vertices, mesh_triangles, density),
+        'model': lambda points: integrator(points, model1, encoding1, N=200000) * c1,
+    }
+    label_dict2 = {
+        'mascon': lambda points: MASCON_ACC_L(points, mascon_points, mascon_masses),
+        'polyhedral': lambda points: POLYHEDRAL_ACC_L(points, mesh_vertices, mesh_triangles, density),
+        'model': lambda points: integrator(points, model2, encoding2, N=200000) * c2
+    }
+    l1, l2 = compare_mode
+    return _plot_compare_acceleration(sample, label_dict1[l1], label_dict2[l2], **kwargs)
+
+
+def _plot_compare_acceleration(sample, label1, label2, **kwargs):
+    """Plots the relative error of the computed acceleration between a model/ ground truth and a model/ ground truth
+
+    Args:
+        sample (str): the sample body's name
+        label1: label function one
+        label2: label function two
+
+    Keyword Args:
+        plane (str): Either "XY","XZ" or "YZ". Defines the cross-section. Defaults to "XY".
+        altitude (float): Altitude to compute error at. Defaults to 0.1.
+        save_path (str): Pass to store plot, if none will display. Defaults to None.
+        N (int): Number of points to sample. Defaults to 5000.
+        logscale (bool): Logscale errors. Defaults to False.
+
+
+    Raises:
+        ValueError: On wrong input
+
+    Returns:
+        plt.Figure: created plot
+    """
+    N = kwargs.get('N', 5000)
+    altitude = kwargs.get('altitude', 0.1)
+    plane = kwargs.get('plane', 'XY')
+    logscale = kwargs.get('logscale', False)
+    save_path = kwargs.get('save_path', None)
+
+    points = get_target_point_sampler(N, method="altitude", bounds=[altitude],
+                                      limit_shape_to_asteroid=f"./3dmeshes/{sample}.pk",
+                                      replace=False)()
     if plane == "XY":
         cut_dim = 2
         cut_dim_name = "z"
@@ -66,48 +121,36 @@ def plot_polyhedral_mascon_acceleration(sample, plane="XY", altitude=0.1, save_p
     print("Left: ", len(points_left), " points.")
     print("Right: ", len(points_right), " points.")
 
-    polyhedral_left, mascon_left, relative_error_left = [], [], []
-    polyhedral_right, mascon_right, relative_error_right = [], [], []
+    label2_values_left, label1_values_left, relative_error_left = [], [], []
+    label2_values_right, label1_values_right, relative_error_right = [], [], []
 
     # Compute accelerations in left points, then right points
     # for both network and mascon model
     batch_size = 100
-    mascon_label = MASCON_ACC_L
-    polyhedral_label = POLYHEDRAL_ACC_L
-
-    density = calculate_density(mesh_vertices, mesh_triangles)
 
     for idx in range((len(points_left) // batch_size) + 1):
         indices = list(range(idx * batch_size, np.minimum((idx + 1) * batch_size, len(points_left))))
-
-        mascon_left.append(
-            mascon_label(points_left[indices], mascon_points, mascon_masses).detach())
-        polyhedral_left.append(
-            polyhedral_label(points_left[indices], mesh_vertices, mesh_triangles, density).detach())
-
+        label1_values_left.append(label1(points_left[indices]).detach())
+        label2_values_left.append(label2(points_left[indices]).detach())
         torch.cuda.empty_cache()
 
     for idx in range((len(points_right) // batch_size) + 1):
         indices = list(range(idx * batch_size, np.minimum((idx + 1) * batch_size, len(points_right))))
-
-        mascon_right.append(
-            mascon_label(points_right[indices], mascon_points, mascon_masses).detach())
-        polyhedral_right.append(
-            polyhedral_label(points_right[indices], mesh_vertices, mesh_triangles, density).detach())
-
+        label1_values_right.append(label1(points_right[indices]).detach())
+        label2_values_right.append(label2(points_right[indices]).detach())
         torch.cuda.empty_cache()
 
     # Accumulate all results
-    mascon_left = torch.cat(mascon_left)
-    polyhedral_left = torch.cat(polyhedral_left)
-    mascon_right = torch.cat(mascon_right)
-    polyhedral_right = torch.cat(polyhedral_right)
+    label1_values_left = torch.cat(label1_values_left)
+    label2_values_left = torch.cat(label2_values_left)
+    label1_values_right = torch.cat(label1_values_right)
+    label2_values_right = torch.cat(label2_values_right)
 
     # Compute relative errors for each hemisphere (left, right)
-    relative_error_left = (torch.sum(torch.abs(polyhedral_left - mascon_left), dim=1) /
-                           torch.sum(torch.abs(mascon_left + 1e-8), dim=1)).cpu().numpy()
-    relative_error_right = (torch.sum(torch.abs(polyhedral_right - mascon_right), dim=1) /
-                            torch.sum(torch.abs(mascon_right + 1e-8), dim=1)).cpu().numpy()
+    relative_error_left = (torch.sum(torch.abs(label2_values_left - label1_values_left), dim=1) /
+                           torch.sum(torch.abs(label1_values_left + 1e-8), dim=1)).cpu().numpy()
+    relative_error_right = (torch.sum(torch.abs(label2_values_right - label1_values_right), dim=1) /
+                            torch.sum(torch.abs(label1_values_right + 1e-8), dim=1)).cpu().numpy()
 
     min_err = np.minimum(np.min(relative_error_left),
                          np.min(relative_error_right))
@@ -149,10 +192,10 @@ def plot_polyhedral_mascon_acceleration(sample, plane="XY", altitude=0.1, save_p
     ax.set_title(cut_dim_name + " < 0")
     ax.tick_params(labelsize=7)
     ax.set_aspect('equal', 'box')
-    ax.annotate("Mascon Acc. Mag=" + str(torch.mean(torch.sum(torch.abs(mascon_left), dim=1)).cpu().numpy()) +
-                "\n" + "Polyhedral Acc. Mag=" +
+    ax.annotate("Label-1 Acc. Mag=" + str(torch.mean(torch.sum(torch.abs(label1_values_left), dim=1)).cpu().numpy()) +
+                "\n" + "Label-2 Acc. Mag=" +
                 str(torch.mean(
-                    torch.sum(torch.abs(polyhedral_left), dim=1)).cpu().numpy()),
+                    torch.sum(torch.abs(label2_values_left), dim=1)).cpu().numpy()),
                 (-0.95, 0.8), fontsize=8, color="white")
 
     # Plot right side stuff
@@ -174,10 +217,10 @@ def plot_polyhedral_mascon_acceleration(sample, plane="XY", altitude=0.1, save_p
     ax.set_title(cut_dim_name + " > 0")
     ax.tick_params(labelsize=7)
     ax.set_aspect('equal', 'box')
-    ax.annotate("Mascon Acc. Mag=" + str(torch.mean(torch.sum(torch.abs(mascon_right), dim=1)).cpu().numpy()) +
-                "\n" + "Polyhedral Acc. Mag=" +
+    ax.annotate("Label-1 Acc. Mag=" + str(torch.mean(torch.sum(torch.abs(label1_values_right), dim=1)).cpu().numpy()) +
+                "\n" + "Label-2 Acc. Mag=" +
                 str(torch.mean(
-                    torch.sum(torch.abs(polyhedral_right), dim=1)).cpu().numpy()),
+                    torch.sum(torch.abs(label2_values_right), dim=1)).cpu().numpy()),
                 (-0.95, 0.8), fontsize=8, color="white")
 
     plt.tight_layout()
@@ -186,4 +229,4 @@ def plot_polyhedral_mascon_acceleration(sample, plane="XY", altitude=0.1, save_p
         plt.savefig(save_path, dpi=300)
         plt.close()
 
-    return ax, mascon_right
+    return ax, label1_values_right
