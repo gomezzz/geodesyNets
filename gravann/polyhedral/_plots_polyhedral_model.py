@@ -4,7 +4,9 @@ import pyvista as pv
 import torch
 from matplotlib import pyplot as plt
 
-from gravann import ACC_L as MASCON_ACC_L, get_target_point_sampler, load_polyhedral_mesh, load_mascon_data
+from .._mascon_labels import ACC_L as MASCON_ACC_L
+from .._io import load_polyhedral_mesh, load_mascon_data
+from .._sample_observation_points import get_target_point_sampler
 from ._polyhedral_labels import ACC_L as POLYHEDRAL_ACC_L
 from ._polyhedral_utils import GRAVITY_CONSTANT_INVERSE, calculate_density
 
