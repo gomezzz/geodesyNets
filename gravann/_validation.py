@@ -1,20 +1,50 @@
+import numpy as np
 import pandas as pd
 import torch
 from tqdm import tqdm
-import numpy as np
 
-from ._losses import contrastive_loss, normalized_loss, normalized_L1_loss, normalized_relative_L2_loss, \
+from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L
+from ._integration import ACC_trap, U_trap_opt, compute_integration_grid
+from ._io import load_sample, load_polyhedral_mesh
+from ._losses import contrastive_loss, normalized_L1_loss, normalized_relative_L2_loss, \
     normalized_relative_component_loss, RMSE, relRMSE
 from ._mascon_labels import ACC_L as MASCON_ACC_L, U_L as MASCON_U_L, ACC_L_differential as MASCON_ACC_L_differential
 from ._sample_observation_points import get_target_point_sampler
-from ._integration import ACC_trap, U_trap_opt, compute_integration_grid
 from ._utils import fixRandomSeeds
 
-from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L
+
+def compute_c(model, encoding, method, **kwargs):
+    """Convenience function to calculate the current c constant for a model
+
+    Args:
+        model (torch.nn): trained model
+        encoding (encoding): encoding to use for the points
+        method (str): either 'mascon' or 'polyhedral'
+        **kwargs: use_acc, mascon_points, mascon_masses, mascon_masses_nu, mesh_vertices, mesh_faces, density
+                  (alternative to mesh/ mascon data: sample file name)
+    """
+    use_acc = kwargs.get("use_acc", True)
+    sample = kwargs.get("sample", None)
+    if method == 'mascon':
+        if sample is not None:
+            mascon_points, mascon_masses, mascon_masses_nu = load_sample(sample, use_acc)
+        else:
+            mascon_points, mascon_masses, mascon_masses_nu = kwargs.get("mascon_points", None), kwargs.get(
+                "mascon_masses", None), kwargs.get("mascon_masses_nu", None)
+        return compute_c_for_model(model, encoding, mascon_points, mascon_masses, mascon_masses_nu, use_acc)
+    elif method == 'polyhedral':
+        if sample is not None:
+            mesh_vertices, mesh_faces = load_polyhedral_mesh(sample)
+        else:
+            mesh_vertices, mesh_faces = kwargs.get("mesh_vertices", None), kwargs.get("mesh_faces", None)
+        density = kwargs.get("density", 1.0)
+        return compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, density, use_acc)
+    else:
+        raise NotImplemented(f"The method {method} is not implemented for compute_c!")
 
 
 def compute_c_for_model(model, encoding, mascon_points, mascon_masses, mascon_masses_nu=None, use_acc=True):
-    """Computes the current c constant for a model.
+    """Computes the current c constant for a model (given mascon points)
 
     Args:
         model (torch.nn): trained model
@@ -39,7 +69,7 @@ def compute_c_for_model(model, encoding, mascon_points, mascon_masses, mascon_ma
         return _compute_c_for_model(
             lambda x: MASCON_U_L(x, mascon_points, mascon_masses),
             lambda x: U_trap_opt(x, model, encoding, N=100000)
-    )
+        )
 
 
 def compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, density, use_acc=True):
@@ -50,6 +80,7 @@ def compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, d
         encoding (encoding): encoding to use for the points
         mesh_vertices ((N, 3) array): mesh vertices
         mesh_faces ((M, 3) array): mesh triangles
+        density (Float): the density of the polyhedron
         use_acc (bool): if acceleration should be used (otherwise potential)
     """
     if use_acc:
@@ -61,7 +92,7 @@ def compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, d
         return _compute_c_for_model(
             lambda x: POLYHEDRAL_U_L(x, mesh_vertices, mesh_faces, density),
             lambda x: U_trap_opt(x, model, encoding, N=100000)
-    )
+        )
 
 
 def _compute_c_for_model(label, label_trap):
