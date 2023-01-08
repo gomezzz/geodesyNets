@@ -35,9 +35,10 @@ def compute_c_for_model(model, encoding, mascon_points, mascon_masses, mascon_ma
                 lambda x: MASCON_ACC_L_differential(x, mascon_points, mascon_masses, mascon_masses_nu),
                 lambda x: ACC_trap(x, model, encoding, N=100000)
             )
-    return _compute_c_for_model(
-        lambda x: MASCON_U_L(x, mascon_points, mascon_masses),
-        lambda x: U_trap_opt(x, model, encoding, N=100000)
+    else:
+        return _compute_c_for_model(
+            lambda x: MASCON_U_L(x, mascon_points, mascon_masses),
+            lambda x: U_trap_opt(x, model, encoding, N=100000)
     )
 
 
@@ -56,9 +57,10 @@ def compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, d
             lambda x: POLYHEDRAL_ACC_L(x, mesh_vertices, mesh_faces, density),
             lambda x: ACC_trap(x, model, encoding, N=100000)
         )
-    return _compute_c_for_model(
-        lambda x: POLYHEDRAL_U_L(x, mesh_vertices, mesh_faces, density),
-        lambda x: U_trap_opt(x, model, encoding, N=100000)
+    else:
+        return _compute_c_for_model(
+            lambda x: POLYHEDRAL_U_L(x, mesh_vertices, mesh_faces, density),
+            lambda x: U_trap_opt(x, model, encoding, N=100000)
     )
 
 
