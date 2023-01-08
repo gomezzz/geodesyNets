@@ -26,7 +26,7 @@ from ._plots import plot_mesh, plot_model_mesh, plot_point_cloud_mesh, plot_poin
 from ._plots import plot_model_vs_cloud_mesh, plot_gradients_per_layer, plot_model_vs_mascon_rejection, plot_model_vs_mascon_contours
 
 # Importing the validation method
-from ._validation import validation, validation_results_unpack_df, compute_c_for_model, compute_c_for_model_polyhedral, compute_c
+from ._validation import validation, validation_results_unpack_df, compute_c_for_model, compute_c
 from ._validation_mascon import validation_mascon
 
 # Importing methods to sample points around asteroid

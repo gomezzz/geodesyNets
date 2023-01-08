@@ -14,14 +14,22 @@ from ._utils import fixRandomSeeds
 
 
 def compute_c(model, encoding, method, **kwargs):
-    """Convenience function to calculate the current c constant for a model
+    """Convenience function to calculate the current c constant for a model (based on mascon or polyhedral mesh data)
 
     Args:
         model (torch.nn): trained model
         encoding (encoding): encoding to use for the points
         method (str): either 'mascon' or 'polyhedral'
-        **kwargs: use_acc, mascon_points, mascon_masses, mascon_masses_nu, mesh_vertices, mesh_faces, density
-                  (alternative to mesh/ mascon data: sample file name)
+
+
+    Keyword Args:
+        use_acc (bool): if acceleration should be used (otherwise potential)
+        mascon_points (torch.tensor): asteroid mascon points
+        mascon_masses (torch.tensor): asteroid mascon masses
+        mascon_masses_nu (torch.tensor): asteroid mascon masses
+        mesh_vertices ((N, 3) array-like): the vertices of a polyhedron
+        mesh_faces ((N, 3) array-like): the triangular faces of a polyhedron
+        density (float): the density of a polyhedron
     """
     use_acc = kwargs.get("use_acc", True)
     sample = kwargs.get("sample", None)
@@ -38,7 +46,7 @@ def compute_c(model, encoding, method, **kwargs):
         else:
             mesh_vertices, mesh_faces = kwargs.get("mesh_vertices", None), kwargs.get("mesh_faces", None)
         density = kwargs.get("density", 1.0)
-        return compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, density, use_acc)
+        return _compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, density, use_acc)
     else:
         raise NotImplemented(f"The method {method} is not implemented for compute_c!")
 
@@ -72,7 +80,7 @@ def compute_c_for_model(model, encoding, mascon_points, mascon_masses, mascon_ma
         )
 
 
-def compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, density, use_acc=True):
+def _compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, density, use_acc=True):
     """Computes the current c constant for a model.
 
     Args:
