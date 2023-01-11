@@ -6,6 +6,7 @@ from polyhedral_gravity.utility import check_mesh
 
 from gravann import ACC_L as MASCON_ACC_L, U_L as MASCON_U_L, load_mascon_data, load_polyhedral_mesh, \
     get_target_point_sampler
+from gravann._losses import relRMSE
 from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L, calculate_density
 
 # ====================== TEST PARAMETERS ======================
@@ -13,17 +14,14 @@ from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L,
 TEST_FILENAMES = ["bennu", "churyumov-gerasimenko", "eros", "hollow", "itokawa", "torus"]
 # The tested distances to the body center
 TEST_DISTANCES = [1e-1, 5e-1, 1.0, 5.0, 1e2, 5e2]
-# The test relative error needed for comparison between mascon & polyhedral model
-TEST_EPSILON = 1.0
+# The test relative error needed for comparison between mascon & polyhedral model for the potential
+TEST_EPSILON = 5e-3
+# The maximum allowed relative root squared mean error for the accelerations
+TEST_relRMSE = 8e-3
 # The number of points per body per altitude
 TEST_POINTS_PER_BATCH = 100
 # The seed for the test cases
 TEST_SEED = 0
-# Exclude certain bodies with distance combinations from failing with the currently set TEST_EPSILON
-TEST_EXCLUDE = {
-    "itokawa": [1e-1],
-    "hollow": [1.0]
-}
 
 
 # ======================= SETUP UTILITY =======================
@@ -92,9 +90,9 @@ def test_compare_mascon_polyhedral_model(data, distance):
         POLYHEDRAL_ACC_L(target_points, vertices, triangles, density))
 
     # Compare the results
-    if not (body_name in TEST_EXCLUDE and distance in TEST_EXCLUDE[body_name]):
-        assert mascon_potential == pytest.approx(polyhedral_potential, rel=TEST_EPSILON)
-        assert mascon_acceleration == pytest.approx(polyhedral_acceleration, rel=TEST_EPSILON)
+    assert mascon_potential == pytest.approx(polyhedral_potential, rel=TEST_EPSILON)
+    root_squared_mean_error = relRMSE(mascon_acceleration, polyhedral_acceleration)
+    assert root_squared_mean_error < TEST_relRMSE
 
 
 @pytest.mark.parametrize("sample", TEST_FILENAMES, ids=TEST_FILENAMES)
