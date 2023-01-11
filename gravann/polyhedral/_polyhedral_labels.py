@@ -22,7 +22,12 @@ def U_L(target_points, mesh_vertices, mesh_edges, density=1.0):
     if torch.is_tensor(target_points):
         target_points = target_points.cpu().detach().numpy()
     result = polyhedral_gravity.evaluate(mesh_vertices, mesh_edges, density_gravity_factor, target_points)
-    return torch.tensor([potential for potential, acceleration, tensor in result])
+    try:
+        return torch.tensor([potential for potential, acceleration, tensor in result])
+    except TypeError:
+        # If target_points was a 1D array-like, handle it
+        potential, acceleration, tensor = result
+        return torch.tensor([potential])
 
 
 def ACC_L(target_points, mesh_vertices, mesh_edges, density=1.0):
@@ -43,4 +48,9 @@ def ACC_L(target_points, mesh_vertices, mesh_edges, density=1.0):
     if torch.is_tensor(target_points):
         target_points = target_points.cpu().detach().numpy()
     result = polyhedral_gravity.evaluate(mesh_vertices, mesh_edges, density_gravity_factor, target_points)
-    return torch.tensor([acceleration for potential, acceleration, tensor in result])
+    try:
+        return torch.tensor([acceleration for potential, acceleration, tensor in result])
+    except TypeError:
+        # If target_points was a 1D array-like, handle it
+        potential, acceleration, tensor = result
+        return torch.tensor([acceleration])
