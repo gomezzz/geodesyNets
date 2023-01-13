@@ -2,6 +2,7 @@ name: geodesynet
 channels:
   - conda-forge
   - pytorch
+  - nvidia
 dependencies:
   - python=3.8
   - ipython
@@ -15,7 +16,7 @@ dependencies:
   - pytorch
   - torchvision
   - torchaudio
-  - cudatoolkit=11.3
+  - pytorch-cuda=11.7
   - pytest
   - pytest-xdist
   - pip
