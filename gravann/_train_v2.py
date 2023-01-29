@@ -68,14 +68,16 @@ def _init_model(run_folder: str, encoding: any, n_neurons: int, activation: any,
         hidden_layers=hidden_layers
     )
 
-    # Initializes training utility
+    # Initializes training utility: Early Stopping
     early_stopper = EarlyStopping(
         save_folder=run_folder
     )
+    # Initializes training utility: Adam Optimizer
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=learning_rate
     )
+    # Initializes training utility: Scheduler for Learning Rate
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
         factor=0.8,
@@ -124,6 +126,7 @@ def _train_on_batch_v2(points, model_fn, labels, loss_fn, optimizer, scheduler):
     """
     # Compute the loss (use N=3000 to start with, then, eventually, beef it up to 200000)
     # predicted = integrator(points, model, encoding, N=N, domain=integration_domain)
+    # TODO give reasonable model_fn
     predicted = model_fn(points)
     c = torch.sum(predicted * labels) / torch.sum(predicted * predicted)
 
