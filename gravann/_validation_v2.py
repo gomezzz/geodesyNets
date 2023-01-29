@@ -20,7 +20,7 @@ def validation_v2(model, encoding, sample, method, use_acc=True, N_integration=5
         model (torch.nn): trained model
         encoding (encoding): encoding to use for the points
         sample (str): the name of the asteroid (also used as filepath)
-        method (str): 'polyhedral' or 'mascon'
+        method (str): 'polyhedral' or 'mascon' or 'polyhedral-mascon' (polyhedral as groundtruth to mascon model)
         use_acc (bool, optional): if to use the acceleration labels instead of the potential
         N_integration (int, optional): Number of integrations points to use. Defaults to 500000.
         **kwargs: see below
@@ -47,6 +47,11 @@ def validation_v2(model, encoding, sample, method, use_acc=True, N_integration=5
     elif method == 'polyhedral':
         label_function, prediction_function = _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs)
         return _validation(label_function, prediction_function, sample, **kwargs)
+    elif method == 'polyhedral-mascon':
+        # Model is not required and can be None in these cases
+        mascon_label, _ = _validation_mascon(model, encoding, use_acc, N_integration, **kwargs)
+        polyhedral_label, _ = _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs)
+        return _validation(polyhedral_label, mascon_label, sample, **kwargs)
     else:
         raise NotImplementedError(f"The method {sample} is not implemented!")
 
