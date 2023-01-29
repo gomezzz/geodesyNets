@@ -38,8 +38,9 @@ from ._train import init_network, train_on_batch, run_training, load_model_run
 from ._utils import max_min_distance, enableCUDA, fixRandomSeeds, print_torch_mem_footprint, get_asteroid_bounding_box, \
     EarlyStopping, unpack_triangle_mesh
 # Importing the validation method
-from ._validation import validation, validation_v2, validation_results_unpack_df
+from ._validation import validation, validation_results_unpack_df
 from ._validation_mascon import validation_mascon
+from ._validation_v2 import validation_v2
 # Custom layer for siren
 from .networks._abs_layer import AbsLayer
 
