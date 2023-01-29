@@ -53,7 +53,7 @@ def validation_v2(model, encoding, sample, method, use_acc=True, N_integration=5
         polyhedral_label, _ = _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs)
         return _validation(polyhedral_label, mascon_label, sample, **kwargs)
     else:
-        raise NotImplementedError(f"The method {sample} is not implemented!")
+        raise NotImplementedError(f"The method {method} is not implemented!")
 
 
 def _validation_mascon(model, encoding, use_acc, N_integration, **kwargs):
