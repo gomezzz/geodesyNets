@@ -24,7 +24,6 @@ def compute_c_for_model_v2(model, encoding, method, use_acc=True, **kwargs):
         mascon_masses_nu (torch.tensor): asteroid mascon masses
         mesh_vertices ((N, 3) array-like): the vertices of a polyhedron
         mesh_faces ((N, 3) array-like): the triangular faces of a polyhedron
-        density (float): the density of a polyhedron
     """
     sample = kwargs.get("sample", None)
     if method == 'mascon':
@@ -39,8 +38,7 @@ def compute_c_for_model_v2(model, encoding, method, use_acc=True, **kwargs):
             mesh_vertices, mesh_faces = load_polyhedral_mesh(sample)
         else:
             mesh_vertices, mesh_faces = kwargs.get("mesh_vertices", None), kwargs.get("mesh_faces", None)
-        density = kwargs.get("density", 1.0)
-        return _compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, density, use_acc)
+        return _compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, use_acc)
     else:
         raise NotImplemented(f"The method {method} is not implemented for compute_c!")
 
@@ -74,7 +72,7 @@ def compute_c_for_model(model, encoding, mascon_points, mascon_masses, mascon_ma
         )
 
 
-def _compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, density, use_acc=True):
+def _compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, use_acc=True):
     """Computes the current c constant for a model.
 
     Args:
@@ -82,17 +80,16 @@ def _compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, 
         encoding (encoding): encoding to use for the points
         mesh_vertices ((N, 3) array): mesh vertices
         mesh_faces ((M, 3) array): mesh triangles
-        density (Float): the density of the polyhedron
         use_acc (bool): if acceleration should be used (otherwise potential)
     """
     if use_acc:
         return _compute_c_for_model(
-            lambda x: POLYHEDRAL_ACC_L(x, mesh_vertices, mesh_faces, density),
+            lambda x: POLYHEDRAL_ACC_L(x, mesh_vertices, mesh_faces),
             lambda x: ACC_trap(x, model, encoding, N=100000)
         )
     else:
         return _compute_c_for_model(
-            lambda x: POLYHEDRAL_U_L(x, mesh_vertices, mesh_faces, density),
+            lambda x: POLYHEDRAL_U_L(x, mesh_vertices, mesh_faces),
             lambda x: U_trap_opt(x, model, encoding, N=100000)
         )
 

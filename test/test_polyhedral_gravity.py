@@ -7,7 +7,7 @@ from polyhedral_gravity.utility import check_mesh
 from gravann import ACC_L as MASCON_ACC_L, U_L as MASCON_U_L, load_mascon_data, load_polyhedral_mesh, \
     get_target_point_sampler
 from gravann._losses import relRMSE
-from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L, calculate_density
+from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L
 
 # ====================== TEST PARAMETERS ======================
 # The tested bodies
@@ -32,18 +32,15 @@ def get_data(sample: str):
         sample: the name of the sample
 
     Returns:
-        tuple of mascon_points, mascon_masses, vertices, triangle_faces, density, the name of the sample
+        tuple of mascon_points, mascon_masses, vertices, triangle_faces, the name of the sample
 
     """
     # Get the mascon & mesh data
     mascon_points, mascon_masses = load_mascon_data(sample)
     vertices, triangles = load_polyhedral_mesh(sample)
 
-    # Calculate the density as required for the polyhedral gravity model
-    density = calculate_density(vertices, triangles)
-
     # Pack everything together
-    return (mascon_points, mascon_masses), (vertices, triangles), density, sample
+    return (mascon_points, mascon_masses), (vertices, triangles), sample
 
 
 # The Data produced by get_data
@@ -60,7 +57,7 @@ def test_compare_mascon_polyhedral_model(data, distance):
     """
     Compares the mascon model to the polyhedral gravity models results
     """
-    mascon_data, mesh_data, density, body_name = data
+    mascon_data, mesh_data, body_name = data
     # Set the print precision of torch for more reasonable messages
     torch.set_printoptions(precision=20)
     # Get the Mascon Parameters
@@ -84,10 +81,10 @@ def test_compare_mascon_polyhedral_model(data, distance):
     # Compute the potential and the acceleration with the two model
     mascon_potential = torch.squeeze(MASCON_U_L(target_points, mascon_points, mascon_masses))
     polyhedral_potential = torch.squeeze(
-        POLYHEDRAL_U_L(target_points, vertices, triangles, density))
+        POLYHEDRAL_U_L(target_points, vertices, triangles))
     mascon_acceleration = torch.squeeze(MASCON_ACC_L(target_points, mascon_points, mascon_masses))
     polyhedral_acceleration = torch.squeeze(
-        POLYHEDRAL_ACC_L(target_points, vertices, triangles, density))
+        POLYHEDRAL_ACC_L(target_points, vertices, triangles))
 
     # Compare the results
     assert mascon_potential == pytest.approx(polyhedral_potential, rel=TEST_EPSILON)

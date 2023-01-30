@@ -3,7 +3,7 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L, calculate_density
+from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L
 from . import compute_c_for_model
 from ._integration import ACC_trap, U_trap_opt, compute_integration_grid
 from ._losses import contrastive_loss, normalized_L1_loss, normalized_relative_L2_loss, \
@@ -94,7 +94,6 @@ def _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs):
     """Generates the label_function and the prediction function for the polyhedral model
     """
     mesh_vertices, mesh_faces, = kwargs['mesh_vertices'], kwargs['mesh_faces']
-    density = calculate_density(mesh_vertices, mesh_faces)
     integration_grid, h, N_int = compute_integration_grid(N_integration)
     if use_acc:
         label_function = POLYHEDRAL_ACC_L
@@ -103,7 +102,7 @@ def _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs):
         label_function = POLYHEDRAL_U_L
         integrator = U_trap_opt
     return (
-        lambda points: label_function(points, mesh_vertices, mesh_faces, density),
+        lambda points: label_function(points, mesh_vertices, mesh_faces),
         lambda points: integrator(points, model, encoding, N=N_int, h=h, sample_points=integration_grid)
     )
 

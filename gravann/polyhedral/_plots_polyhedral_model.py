@@ -5,7 +5,6 @@ import torch
 from matplotlib import pyplot as plt
 
 from ._polyhedral_labels import ACC_L as POLYHEDRAL_ACC_L
-from ._polyhedral_utils import calculate_density
 from .. import ACC_trap
 from .._io import load_polyhedral_mesh, load_mascon_data
 from .._mascon_labels import ACC_L as MASCON_ACC_L
@@ -40,7 +39,6 @@ def plot_compare_acceleration(sample: str, compare_mode: (str, str), **kwargs):
     """
     # Get the vertices and triangles
     mesh_vertices, mesh_triangles = load_polyhedral_mesh(sample)
-    density = calculate_density(mesh_vertices, mesh_triangles)
     # Get the mascon data
     mascon_points, mascon_masses = load_mascon_data(sample)
 
@@ -51,12 +49,12 @@ def plot_compare_acceleration(sample: str, compare_mode: (str, str), **kwargs):
     integrator = ACC_trap
     label_dict1 = {
         'mascon': lambda points: MASCON_ACC_L(points, mascon_points, mascon_masses),
-        'polyhedral': lambda points: POLYHEDRAL_ACC_L(points, mesh_vertices, mesh_triangles, density),
+        'polyhedral': lambda points: POLYHEDRAL_ACC_L(points, mesh_vertices, mesh_triangles),
         'model': lambda points: integrator(points, model1, encoding1, N=200000) * c1,
     }
     label_dict2 = {
         'mascon': lambda points: MASCON_ACC_L(points, mascon_points, mascon_masses),
-        'polyhedral': lambda points: POLYHEDRAL_ACC_L(points, mesh_vertices, mesh_triangles, density),
+        'polyhedral': lambda points: POLYHEDRAL_ACC_L(points, mesh_vertices, mesh_triangles),
         'model': lambda points: integrator(points, model2, encoding2, N=200000) * c2
     }
     l1, l2 = compare_mode
