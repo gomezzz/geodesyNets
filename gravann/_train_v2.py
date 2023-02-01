@@ -67,8 +67,13 @@ def run_training_v2(cfg: {str, any}):
     run_folder = init_environment(cfg)
     # Initialize the model and associated torch training utility
     model, early_stopper, optimizer, scheduler = init_model_and_optimizer(
-        run_folder=run_folder, encoding=cfg["encoding"], n_neurons=cfg["n_neurons"], activation=cfg["activation"],
-        model_type=cfg["model_type"], omega=cfg["omega"], hidden_layers=cfg["hidden_layers"],
+        run_folder=run_folder,
+        encoding=cfg["encoding"],
+        n_neurons=cfg["n_neurons"],
+        activation=cfg["activation"],
+        model_type=cfg["type"],
+        omega=cfg["omega"],
+        hidden_layers=cfg["hidden_layers"],
         learning_rate=cfg["learning_rate"]
     )
     # Initialize the target point sampler
@@ -99,8 +104,13 @@ def run_training_v2(cfg: {str, any}):
         if it % 100 == 0:
             # Save a plot
             plot_model_rejection(
-                model, cfg["encoding"], views_2d=True, bw=True, N=cfg["plotting_points"], alpha=0.1,
-                s=50, c=c,
+                model, cfg["encoding"],
+                views_2d=True,
+                bw=True,
+                N=cfg["plotting_points"],
+                alpha=0.1,
+                s=50,
+                c=c,
                 progressbar=False,
                 save_path=run_folder + "rejection_plot_iter" + format(it, '06d') + ".png"
             )
@@ -165,11 +175,20 @@ def run_training_v2(cfg: {str, any}):
     )
 
     # store run config
-    cfg_dict = {"Sample": cfg["sample"], "Type": "ACC" if cfg["model"]["use_acceleration"] else "U",
-                "Model": cfg["model"]["type"], "Loss": cfg["loss_fn"].__name__, "Encoding": cfg["encoding"].name,
-                "Integrator": cfg["integrator"].__name__, "Activation": str(cfg["activation"])[:-2],
-                "n_neurons": cfg["model"]["n_neurons"], "hidden_layers": cfg["model"]["hidden_layers"],
-                "Batch Size": cfg["batch_size"], "LR": cfg["training"]["lr"], "Target Sampler": cfg["sample_method"],
+    cfg_dict = {"Sample": cfg["sample"],
+                "Type": "ACC" if cfg["use_acceleration"] else "U",
+                "Model": cfg["type"],
+                "Loss": cfg["loss_fn"].__name__,
+                "Encoding": cfg["encoding"].name,
+                "Integrator": cfg["integrator"].__name__,
+                "Activation": str(cfg["activation"])[:-2],
+                "n_neurons": cfg["n_neurons"],
+                "hidden_layers": cfg["hidden_layers"],
+                "Batch Size": cfg["batch_size"],
+                "LR": cfg["training"]["lr"],
+                "Method": cfg["method"],
+                "Noise": cfg["noise"],
+                "Target Sampler": cfg["sample_method"],
                 "Integration Points": cfg["integration"]["points"],
                 "c": c}
 
@@ -184,13 +203,20 @@ def run_training_v2(cfg: {str, any}):
     runtime = end_time - start_time
 
     result_dictionary = {"Sample": cfg["sample"],
-                         "Type": "ACC" if cfg["model"]["use_acceleration"] else "U", "Model": cfg["model"]["type"],
-                         "Loss": cfg["loss_fn"].__name__, "Encoding": cfg["encoding"].name,
-                         "Integrator": cfg["integrator"].__name__, "Activation": str(cfg["activation"])[:-2],
-                         "Batch Size": cfg["batch_size"], "LR": cfg["training"]["lr"],
+                         "Type": "ACC" if cfg["use_acceleration"] else "U",
+                         "Model": cfg["type"],
+                         "Loss": cfg["loss_fn"].__name__,
+                         "Encoding": cfg["encoding"].name,
+                         "Integrator": cfg["integrator"].__name__,
+                         "Activation": str(cfg["activation"])[:-2],
+                         "Batch Size": cfg["batch_size"],
+                         "LR": cfg["training"]["lr"],
+                         "Method": cfg["method"],
                          "Target Sampler": cfg["sample_method"],
+                         "Noise": cfg["noise"],
                          "Integration Points": cfg["integration"]["points"],
-                         "Runtime": runtime, "Final Loss": loss_log[-1],
+                         "Runtime": runtime,
+                         "Final Loss": loss_log[-1],
                          "Final WeightedAvg Loss": weighted_average_log[-1]}
     results_df = pd.concat(
         [pd.DataFrame([result_dictionary]), val_res], axis=1)
