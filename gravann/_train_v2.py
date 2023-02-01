@@ -1,4 +1,3 @@
-import pathlib
 import pickle as pk
 import time
 from collections import deque
@@ -7,125 +6,19 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from tqdm import tqdm
 
-from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L
-from . import load_polyhedral_mesh, load_mascon_data
 # Required for loading runs
 from ._encodings import *
 from ._io import save_results, save_plots
 from ._losses import contrastive_loss, normalized_relative_L2_loss, normalized_relative_component_loss
 # Required for loading runs
-from ._mascon_labels import ACC_L as MASCON_ACC_L
 from ._plots import plot_model_rejection, plot_model_vs_mascon_contours
-from ._sample_observation_points import get_target_point_sampler
-from ._train import init_network
-from ._utils import fixRandomSeeds, EarlyStopping
+from ._train_v2_init import init_training_sampler, init_environment, init_model_and_optimizer, init_prediction_label, \
+    init_ground_truth_labels
 from ._validation import validation_results_unpack_df
 from ._validation_v2 import validation_v2
 
 
-def _init_environment(parameters: {str, any}) -> str:
-    """Creates the environment (the run-folder) for the given training with parameters
-
-    Args:
-        parameters: dictionary of parameters of this training run
-
-    Returns:
-        the run folder
-
-    """
-    # Clear GPU memory
-    torch.cuda.empty_cache()
-
-    # Fix the random seeds for this run
-    fixRandomSeeds()
-
-    domain = str(parameters['sample_domain']) \
-        .replace('.', '_').replace('[', '').replace(']', '').replace(',', '').replace(' ', '=')
-
-    # Create folder for this specific run
-    run_folder = f"""
-        {parameters['output_folder']}/
-        {parameters['method']}/
-        {parameters['sample']}/
-        LR={parameters['learning_rate']}_loss={parameters['parameters'].__name__}_ENC={parameters['encoding'].name}_
-        BS={parameters['batch_size']}_layers={parameters['hidden_layers']}_neurons={parameters['n_neurons']}_
-        METHOD={parameters['target_sample_method']}_DOMAIN={domain}/
-        """
-    pathlib.Path(run_folder).mkdir(parents=True, exist_ok=True)
-    return run_folder
-
-
-def _init_model_and_optimizer(run_folder: str, encoding: any, n_neurons: int, activation: any, model_type: str,
-                              omega: float, hidden_layers: int, learning_rate: float):
-    """Initializes the model and the associated training utility
-
-    Args:
-        run_folder: the folder where to store the model in case of early stopping
-        encoding: encoding instance to use for the network
-        n_neurons: the number of neurons per layer
-        activation: activation function for the last network layer
-        model_type: the model type
-        omega: Omega value for siren activations
-        hidden_layers: the number of hidden layer
-        learning_rate: the utilized learning rate for the optimizer
-
-    Returns:
-        Tuple of model, the early_stopper, optimizer, scheduler
-
-    """
-    # Initializes the model
-    model = init_network(
-        encoding,
-        n_neurons=n_neurons,
-        activation=activation,
-        model_type=model_type,
-        siren_omega=omega,
-        hidden_layers=hidden_layers
-    )
-
-    # Initializes training utility: Early Stopping
-    early_stopper = EarlyStopping(
-        save_folder=run_folder
-    )
-    # Initializes training utility: Adam Optimizer
-    optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=learning_rate
-    )
-    # Initializes training utility: Scheduler for Learning Rate
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer,
-        factor=0.8,
-        patience=200,
-        min_lr=1e-6,
-        verbose=True
-    )
-
-    return model, early_stopper, optimizer, scheduler
-
-
-def _init_training_sampler(sample: str, target_sample_method: str, sample_domain: [float], batch_size: int):
-    """Creates a new target point sample with the given method and sample domain.
-
-    Args:
-        sample: the sample body's name
-        target_sample_method: the sample method (e.g. 'spherical')
-        sample_domain: the sample domain, specifies the sampling radius.
-        batch_size: the number of points per function call
-
-    Returns:
-        sampling function
-
-    """
-    return get_target_point_sampler(
-        batch_size,
-        method=target_sample_method,
-        bounds=sample_domain,
-        limit_shape_to_asteroid=f"f3dmeshes/{sample}_lp.pk"
-    )
-
-
-def _train_on_batch_v2(points, prediction_fn, labels, loss_fn, optimizer, scheduler):
+def train_on_batch_v2(points, prediction_fn, labels, loss_fn, optimizer, scheduler):
     """Trains the passed model on the passed batch
 
     Args:
@@ -158,29 +51,6 @@ def _train_on_batch_v2(points, prediction_fn, labels, loss_fn, optimizer, schedu
     return loss, c
 
 
-def _init_prediction_label(integrator, model, encoding, N, integration_domain):
-    return lambda points: integrator(points, model, encoding, N=N, domain=integration_domain)
-
-
-def _init_ground_truth_labels(method, sample):
-    if method == 'polyhedral':
-        mesh_vertices, mesh_edges = load_polyhedral_mesh(sample)
-        return _init_polyhedral_label(mesh_vertices, mesh_edges)
-    elif method == 'mascon':
-        mascon_points, mascon_masses_u = load_mascon_data(sample)
-        return _init_polyhedral_label(mascon_points, mascon_masses_u)
-    else:
-        raise NotImplemented(f"The method {method} is not implemented!")
-
-
-def _init_polyhedral_label(mesh_vertices, mesh_edges):
-    return lambda points: POLYHEDRAL_ACC_L(points, mesh_vertices, mesh_edges)
-
-
-def _init_mascon_label(mascon_points, mascon_masses):
-    return lambda points: MASCON_ACC_L(points, mascon_points, mascon_masses)
-
-
 def run_training_v2(cfg: {str, any}):
     """Runs a specific parameter configuration.
 
@@ -194,25 +64,25 @@ def run_training_v2(cfg: {str, any}):
     start_time = time.time()
 
     # Initialize the environment and prepare the run folder
-    run_folder = _init_environment(cfg)
+    run_folder = init_environment(cfg)
     # Initialize the model and associated torch training utility
-    model, early_stopper, optimizer, scheduler = _init_model_and_optimizer(
+    model, early_stopper, optimizer, scheduler = init_model_and_optimizer(
         run_folder=run_folder, encoding=cfg["encoding"], n_neurons=cfg["n_neurons"], activation=cfg["activation"],
         model_type=cfg["model_type"], omega=cfg["omega"], hidden_layers=cfg["hidden_layers"],
         learning_rate=cfg["learning_rate"]
     )
     # Initialize the target point sampler
-    target_points_sampler = _init_training_sampler(
+    target_points_sampler = init_training_sampler(
         sample=cfg["sample"], target_sample_method=cfg["sample_method"],
         sample_domain=cfg["sample_domain"], batch_size=cfg["batch_size"]
     )
     # Initialize the prediction function by binding the model and defined configuration parameters
-    prediction_fn = _init_prediction_label(
+    prediction_fn = init_prediction_label(
         integrator=cfg["integrator"], model=model, encoding=cfg["encoding"],
         N=cfg["N"], integration_domain=cfg["integration_domain"]
     )
     # Initialize the label function by binding the sample data
-    label_fn = _init_ground_truth_labels(
+    label_fn = init_ground_truth_labels(
         method=cfg["method"], sample=cfg["sample"]
     )
 
@@ -245,7 +115,7 @@ def run_training_v2(cfg: {str, any}):
             labels = label_fn(target_points)
 
         # Train
-        loss, c = _train_on_batch_v2(
+        loss, c = train_on_batch_v2(
             target_points, prediction_fn, labels,
             cfg["loss_fn"], optimizer, scheduler
         )
