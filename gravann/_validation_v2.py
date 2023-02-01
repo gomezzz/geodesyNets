@@ -4,7 +4,7 @@ import torch
 from tqdm import tqdm
 
 from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L
-from . import compute_c_for_model
+from . import compute_c_for_model, load_polyhedral_mesh, load_mascon_data
 from ._integration import ACC_trap, U_trap_opt, compute_integration_grid
 from ._losses import contrastive_loss, normalized_L1_loss, normalized_relative_L2_loss, \
     normalized_relative_component_loss, RMSE, relRMSE
@@ -42,9 +42,17 @@ def validation_v2(model, encoding, sample, method, use_acc=True, N_integration=5
 
     """
     if method == 'mascon':
+        # If not given, set these keyword arguments in this case
+        mascon_points, mascon_masses = load_mascon_data(sample)
+        kwargs.setdefault("mascon_points", mascon_points)
+        kwargs.setdefault("mascon_masses", mascon_masses)
         label_function, prediction_function = _validation_mascon(model, encoding, use_acc, N_integration, **kwargs)
         return _validation(label_function, prediction_function, sample, **kwargs)
     elif method == 'polyhedral':
+        # If not given, set these keyword arguments in this case
+        mesh_vertices, mesh_edges = load_polyhedral_mesh(sample)
+        kwargs.setdefault("mesh_vertices", mesh_vertices)
+        kwargs.setdefault("mesh_edges", mesh_edges)
         label_function, prediction_function = _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs)
         return _validation(label_function, prediction_function, sample, **kwargs)
     elif method == 'polyhedral-mascon':
