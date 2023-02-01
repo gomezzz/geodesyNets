@@ -5,7 +5,6 @@ import numpy as np
 import torch
 
 from ._plots import plot_model_vs_mascon_contours, plot_model_rejection, plot_model_vs_mascon_rejection
-from .polyhedral import plot_compare_acceleration
 
 
 def load_sample(sample, use_differential=False):
@@ -168,12 +167,12 @@ def save_plots_v2(model, encoding, sample, lr_log, loss_log, weighted_average_lo
                          bw=True, N=N, alpha=0.1, s=50, save_path=folder + "rejection_plot_iter999999.png", c=c)
     print("Done.")
     print("Creating acceleration plot...", end="")
-    plot_compare_acceleration(
-        sample=sample,
-        compare_mode=('model', 'polyhedral'),
-        model_1=(model, encoding, c),
-        save_path=folder + "model_vs_polyhedral_acc.png"
-    )
+    # plot_compare_acceleration(
+    #     sample=sample,
+    #     compare_mode=('model', 'polyhedral'),
+    #     model_1=(model, encoding, c),
+    #     save_path=folder + "model_vs_polyhedral_acc.png"
+    # )
     print("Done.")
 
     print("Creating loss plots...", end="")
