@@ -2,16 +2,13 @@ import pickle as pk
 import time
 from collections import deque
 
-import matplotlib.pyplot as plt
 import pandas as pd
 from tqdm import tqdm
 
-from gravann.polyhedral import plot_compare_acceleration
 from ._encodings import *
 from ._io import save_results, save_plots_v2
 from ._losses import contrastive_loss, normalized_relative_L2_loss, normalized_relative_component_loss
 # Required for loading runs
-from ._plots import plot_model_rejection
 from ._train_v2_init import init_training_sampler, init_environment, init_model_and_optimizer, init_prediction_label, \
     init_ground_truth_labels
 from ._validation import validation_results_unpack_df
@@ -100,27 +97,7 @@ def run_training_v2(cfg: {str, any}):
     # At the beginning (first plots) we assume no learned c
     c = 1.
     for it in t:
-        # Each hundred epochs we produce the plots
-        if it % 100 == 0:
-            # Save a plot
-            plot_model_rejection(
-                model, cfg["encoding"],
-                views_2d=True,
-                bw=True,
-                N=cfg["plotting_points"],
-                alpha=0.1,
-                s=50,
-                c=c,
-                progressbar=False,
-                save_path=run_folder + "rejection_plot_iter" + format(it, '06d') + ".png"
-            )
-            plot_compare_acceleration(
-                sample=cfg["sample"],
-                compare_mode=('model', 'polyhedral'),
-                model_1=(model, cfg["encoding"], c),
-                save_path=run_folder + "acc_plot_iter" + format(it, '06d') + ".png"
-            )
-            plt.close('all')
+        # TODO Each hundred epochs we could produce the plots
         # Each ten epochs we resample the target points
         if it % 10 == 0:
             target_points = target_points_sampler()
@@ -152,11 +129,13 @@ def run_training_v2(cfg: {str, any}):
     # Restore best checkpoint
     print("Restoring best checkpoint for validation...")
     model.load_state_dict(torch.load(run_folder + "best_model.mdl"))
+    print("Validating...")
     validation_results = validation_v2(model=model, encoding=cfg["encoding"], sample=cfg["sample"],
                                        ground_truth=cfg["ground_truth"], use_acc=cfg.get("use_acceleration", True),
-                                       N_integration=cfg["N_integration"], N=cfg["validation_points"],
+                                       N_integration=cfg["integration_points"], N=cfg["validation_points"],
                                        progressbar=False)
 
+    print("Saving...")
     save_results(
         loss_log, weighted_average_log,
         validation_results, model, run_folder

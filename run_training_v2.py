@@ -16,15 +16,15 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
     gravann.enableCUDA()
     print("Will use device ", os.environ["TORCH_DEVICE"])
 
-    print("## - START WITH ITERATIONS")
+    print("#### - START WITH ITERATIONS")
     for sample in cfg["samples"]:
-        print(f"#### - SAMPLE START {sample}")
+        print(f"###### - SAMPLE START {sample}")
         if cfg["integration"]["limit_domain"]:
             cfg["integration"]["domain"] = gravann.get_asteroid_bounding_box(asteroid_pk_path=f"3dmeshes/{sample}.pk")
         for (
                 ground_truth,
                 loss, batch_size, learning_rate,
-                encoding, activation, hidden_layers, n_neurons, model_type,
+                encoding, activation, hidden_layers, n_neurons,
                 omega,
                 sample_method, sample_domain,
         ) in itertools.product(
@@ -36,12 +36,11 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
             cfg["model"]["activation"],
             cfg["model"]["hidden_layers"],
             cfg["model"]["n_neurons"],
-            cfg["model"]["type"],
             cfg["siren"]["omega"],
             cfg["target_sampling"]["method"],
             cfg["target_sampling"]["domain"]
         ):
-            print("###### - SINGLE RUN START")
+            print("######## - SINGLE RUN START")
             run_results = gravann.run_training_v2({
                 ########################################################################################################
                 # Name of the sample and other administrative stuff
@@ -69,7 +68,7 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
                 "activation": activation,
                 "hidden_layers": hidden_layers,
                 "n_neurons": n_neurons,
-                "model_type": model_type,
+                "model_type": cfg["model"]["type"],
                 ########################################################################################################
                 # Sirene Configuration
                 ########################################################################################################
@@ -90,16 +89,16 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
                 "integration_points": cfg["integration"]["points"],
                 "integration_domain": cfg["integration"]["domain"]
             })
-            results_df = results_df.append(run_results, ignore_index=True)
-            print("###### - SINGLE RUN DONE")
-        print(f"#### - SAMPLE {sample} DONE")
-    print("## - ALL ITERATIONS DONE")
+            # results_df = results_df.append(run_results, ignore_index=True)
+            print("######## - SINGLE RUN DONE")
+        print(f"###### - SAMPLE {sample} DONE")
+    print("#### - ALL ITERATIONS DONE")
     print(f"Writing results csv to {cfg['output_folder']}")
     if os.path.isfile(f"{cfg['output_folder']}/results.csv"):
         previous_results = pd.read_csv(f"{cfg['output_folder']}/results.csv")
         results_df = pd.concat([previous_results, results_df])
     results_df.to_csv(f"{cfg['output_folder']}/results.csv", index=False)
-    print("## - EVERYTHING DONE")
+    print("#### - EVERYTHING DONE")
 
 
 def _init_env(cfg: dict) -> (dict, pd.DataFrame):
@@ -158,4 +157,5 @@ if __name__ == "__main__":
     cfg = _cfg_to_func(cfg)
     cfg, results_df = _init_env(cfg)
     print(cfg)
-    # run(cfg, results_df)
+    print("INPUT LOADED")
+    run(cfg, results_df)

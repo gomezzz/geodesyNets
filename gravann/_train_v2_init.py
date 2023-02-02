@@ -29,14 +29,14 @@ def init_environment(parameters: {str, any}) -> str:
         .replace('.', '_').replace('[', '').replace(']', '').replace(',', '').replace(' ', '=')
 
     # Create folder for this specific run
-    run_folder = f"""
-        {parameters['output_folder']}/
-        {parameters['ground_truth']}/
-        {parameters['sample']}/
-        LR={parameters['learning_rate']}_loss={parameters['parameters'].__name__}_ENC={parameters['encoding'].name}_
-        BS={parameters['batch_size']}_layers={parameters['hidden_layers']}_neurons={parameters['n_neurons']}_
-        METHOD={parameters['sample_method']}_DOMAIN={domain}/
-        """
+    run_folder = (
+        f"{parameters['output_folder']}/"
+        f"{parameters['ground_truth']}/"
+        f"{parameters['sample']}/"
+        f"LR={parameters['learning_rate']}_loss={parameters['loss_fn'].__name__}_ENC={parameters['encoding'].name}_"
+        f"BS={parameters['batch_size']}_layers={parameters['hidden_layers']}_neurons={parameters['n_neurons']}_"
+        f"METHOD={parameters['sample_method']}_DOMAIN={domain}/"
+    )
     pathlib.Path(run_folder).mkdir(parents=True, exist_ok=True)
     return run_folder
 
@@ -107,7 +107,7 @@ def init_training_sampler(sample: str, target_sample_method: str, sample_domain:
         batch_size,
         method=target_sample_method,
         bounds=sample_domain,
-        limit_shape_to_asteroid=f"f3dmeshes/{sample}_lp.pk"
+        limit_shape_to_asteroid=f"3dmeshes/{sample}_lp.pk"
     )
 
 

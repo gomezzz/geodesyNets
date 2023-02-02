@@ -24,21 +24,23 @@ n_neurons = [100]
 omega = [30.0]
 
 [integration]
-points = 10000
+points = 10
 limit_domain = false
 domain = [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]]
 
 [training]
-iterations = 300
+iterations = 1
 batch_size = [100]
-lr = 1e-4
+learning_rate = [1e-4]
 loss = [
     "normalized_L1_loss"
 ]
-validation_points = 1000
+validation_points = 1
 
 [target_sampling]
 method = [
     "spherical"
 ]
-domain = [0.0, 1.0]
+domain = [
+    [0.0, 1.0]
+]

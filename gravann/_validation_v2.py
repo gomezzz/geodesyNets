@@ -50,9 +50,9 @@ def validation_v2(model, encoding, sample, ground_truth, use_acc=True, N_integra
         return _validation(label_function, prediction_function, sample, **kwargs)
     elif ground_truth == 'polyhedral':
         # If not given, set these keyword arguments in this case
-        mesh_vertices, mesh_edges = load_polyhedral_mesh(sample)
+        mesh_vertices, mesh_faces = load_polyhedral_mesh(sample)
         kwargs.setdefault("mesh_vertices", mesh_vertices)
-        kwargs.setdefault("mesh_edges", mesh_edges)
+        kwargs.setdefault("mesh_faces", mesh_faces)
         label_function, prediction_function = _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs)
         return _validation(label_function, prediction_function, sample, **kwargs)
     elif ground_truth == 'polyhedral-mascon':
