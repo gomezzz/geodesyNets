@@ -20,7 +20,7 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
     for sample in cfg["samples"]:
         print(f"#### - SAMPLE START {sample}")
         if cfg["integration"]["limit_domain"]:
-            cfg["integration"]["domain"] = gravann.get_asteroid_bounding_box(asteroid_pk_path=f"3dmeshes/{sample}")
+            cfg["integration"]["domain"] = gravann.get_asteroid_bounding_box(asteroid_pk_path=f"3dmeshes/{sample}.pk")
         for (
                 ground_truth,
                 loss, batch_size, learning_rate,
@@ -118,8 +118,6 @@ def _init_env(cfg: dict) -> (dict, pd.DataFrame):
 
     if cfg["integration"]["limit_domain"]:
         cfg["name"] = cfg["name"] + "_" + "limit_int"
-    if cfg["training"]["differential_training"]:
-        cfg["name"] = cfg["name"] + "_" + "diff_train"
 
     cfg["output_folder"] = "results/" + cfg["name"] + "/"
 
@@ -154,8 +152,10 @@ def _cfg_to_func(cfg: dict) -> dict:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        raise IOError("No input provided!")
     cfg = toml.load(sys.argv[1])
     cfg = _cfg_to_func(cfg)
     cfg, results_df = _init_env(cfg)
     print(cfg)
-    run(cfg, results_df)
+    # run(cfg, results_df)

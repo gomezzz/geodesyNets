@@ -1,0 +1,44 @@
+name = "polyhedral-example"
+cuda_devices = "0"
+plotting_points = 2500
+ground_truth = [
+    "polyhedral"
+]
+samples = [
+    "Churyumov-Gerasimenko"
+]
+
+[model]
+activation = [
+    "Abs"
+]
+encoding = [
+    "direct_encoding"
+]
+use_acceleration = true
+type = "siren"
+hidden_layers = [3]
+n_neurons = [100]
+
+[siren]
+omega = [30.0]
+
+[integration]
+points = 10000
+limit_domain = false
+domain = [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]]
+
+[training]
+iterations = 300
+batch_size = [100]
+lr = 1e-4
+loss = [
+    "normalized_L1_loss"
+]
+validation_points = 1000
+
+[target_sampling]
+method = [
+    "spherical"
+]
+domain = [0.0, 1.0]
