@@ -71,7 +71,7 @@ def run_training_v2(cfg: {str, any}):
         encoding=cfg["encoding"],
         n_neurons=cfg["n_neurons"],
         activation=cfg["activation"],
-        model_type=cfg["type"],
+        model_type=cfg["model_type"],
         omega=cfg["omega"],
         hidden_layers=cfg["hidden_layers"],
         learning_rate=cfg["learning_rate"]
@@ -84,11 +84,11 @@ def run_training_v2(cfg: {str, any}):
     # Initialize the prediction function by binding the model and defined configuration parameters
     prediction_fn = init_prediction_label(
         integrator=cfg["integrator"], model=model, encoding=cfg["encoding"],
-        N=cfg["N"], integration_domain=cfg["integration_domain"]
+        integration_points=cfg["integration_points"], integration_domain=cfg["integration_domain"]
     )
     # Initialize the label function by binding the sample data
     label_fn = init_ground_truth_labels(
-        method=cfg["method"], sample=cfg["sample"]
+        ground_truth=cfg["ground_truth"], sample=cfg["sample"]
     )
 
     # When a new network is created we init empty training logs and we init some loss trend indicators
@@ -96,7 +96,7 @@ def run_training_v2(cfg: {str, any}):
     weighted_average = deque([], maxlen=20)
     target_points, labels = [], []
 
-    t = tqdm(range(cfg["training"]["iterations"]), ncols=150)
+    t = tqdm(range(cfg["iterations"]), ncols=150)
     # At the beginning (first plots) we assume no learned c
     c = 1.
     for it in t:
@@ -139,7 +139,7 @@ def run_training_v2(cfg: {str, any}):
         lr_log.append(optimizer.param_groups[0]['lr'])
         weighted_average_log.append(np.mean(weighted_average))
         loss_log.append(loss.item())
-        n_inferences.append((cfg["integration"]["points"] * cfg["batch_size"]) // 1000)
+        n_inferences.append((cfg["integration_points"] * cfg["batch_size"]) // 1000)
         wa_out = np.mean(weighted_average)
 
         t.set_postfix_str(f"L={loss.item():.3e} | AvgL={wa_out:.3e} | c={c:.3e}")
@@ -152,16 +152,10 @@ def run_training_v2(cfg: {str, any}):
     # Restore best checkpoint
     print("Restoring best checkpoint for validation...")
     model.load_state_dict(torch.load(run_folder + "best_model.mdl"))
-    validation_results = validation_v2(
-        model=model,
-        encoding=cfg["encoding"],
-        sample=cfg["sample"],
-        method=cfg["method"],
-        use_acc=cfg.get("use_acceleration", True),
-        N_integration=cfg["N_integration"],
-        N=cfg["training"]["validation_points"],
-        progressbar=False
-    )
+    validation_results = validation_v2(model=model, encoding=cfg["encoding"], sample=cfg["sample"],
+                                       ground_truth=cfg["ground_truth"], use_acc=cfg.get("use_acceleration", True),
+                                       N_integration=cfg["N_integration"], N=cfg["validation_points"],
+                                       progressbar=False)
 
     save_results(
         loss_log, weighted_average_log,
@@ -177,7 +171,7 @@ def run_training_v2(cfg: {str, any}):
     # store run config
     cfg_dict = {"Sample": cfg["sample"],
                 "Type": "ACC" if cfg["use_acceleration"] else "U",
-                "Model": cfg["type"],
+                "Model": cfg["model_type"],
                 "Loss": cfg["loss_fn"].__name__,
                 "Encoding": cfg["encoding"].name,
                 "Integrator": cfg["integrator"].__name__,
@@ -185,11 +179,11 @@ def run_training_v2(cfg: {str, any}):
                 "n_neurons": cfg["n_neurons"],
                 "hidden_layers": cfg["hidden_layers"],
                 "Batch Size": cfg["batch_size"],
-                "LR": cfg["training"]["lr"],
-                "Method": cfg["method"],
+                "LR": cfg["learning_rate"],
+                "Ground Truth": cfg["ground_truth"],
                 "Noise": cfg["noise"],
                 "Target Sampler": cfg["sample_method"],
-                "Integration Points": cfg["integration"]["points"],
+                "Integration Points": cfg["integration_points"],
                 "c": c}
 
     with open(run_folder + 'config.pk', 'wb') as handle:
@@ -204,17 +198,17 @@ def run_training_v2(cfg: {str, any}):
 
     result_dictionary = {"Sample": cfg["sample"],
                          "Type": "ACC" if cfg["use_acceleration"] else "U",
-                         "Model": cfg["type"],
+                         "Model": cfg["model_type"],
                          "Loss": cfg["loss_fn"].__name__,
                          "Encoding": cfg["encoding"].name,
                          "Integrator": cfg["integrator"].__name__,
                          "Activation": str(cfg["activation"])[:-2],
                          "Batch Size": cfg["batch_size"],
-                         "LR": cfg["training"]["lr"],
-                         "Method": cfg["method"],
+                         "LR": cfg["learning_rate"],
+                         "Ground Truth": cfg["ground_truth"],
                          "Target Sampler": cfg["sample_method"],
                          "Noise": cfg["noise"],
-                         "Integration Points": cfg["integration"]["points"],
+                         "Integration Points": cfg["integration_points"],
                          "Runtime": runtime,
                          "Final Loss": loss_log[-1],
                          "Final WeightedAvg Loss": weighted_average_log[-1]}

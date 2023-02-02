@@ -34,6 +34,7 @@ from ._sample_observation_points import get_target_point_sampler
 from ._stokes import mascon2stokes, Clm, Slm, constant_factors, legendre_factory_torch
 # Import training utility functions
 from ._train import init_network, train_on_batch, run_training, load_model_run
+from ._train_v2 import run_training_v2
 # Import utility functions
 from ._utils import max_min_distance, enableCUDA, fixRandomSeeds, print_torch_mem_footprint, get_asteroid_bounding_box, \
     EarlyStopping, unpack_triangle_mesh

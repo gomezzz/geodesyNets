@@ -13,14 +13,14 @@ from ._sample_observation_points import get_target_point_sampler
 from ._utils import fixRandomSeeds
 
 
-def validation_v2(model, encoding, sample, method, use_acc=True, N_integration=500000, **kwargs):
+def validation_v2(model, encoding, sample, ground_truth, use_acc=True, N_integration=500000, **kwargs):
     """Convenience function to compute the different loss values for the passed model and asteroid with high precision
 
     Args:
         model (torch.nn): trained model
         encoding (encoding): encoding to use for the points
         sample (str): the name of the asteroid (also used as filepath)
-        method (str): 'polyhedral' or 'mascon' or 'polyhedral-mascon' (polyhedral as groundtruth to mascon model)
+        ground_truth (str): 'polyhedral' or 'mascon' or 'polyhedral-mascon' (polyhedral as groundtruth to mascon model)
         use_acc (bool, optional): if to use the acceleration labels instead of the potential
         N_integration (int, optional): Number of integrations points to use. Defaults to 500000.
         **kwargs: see below
@@ -41,27 +41,27 @@ def validation_v2(model, encoding, sample, method, use_acc=True, N_integration=5
         pandas dataframe: Results as df
 
     """
-    if method == 'mascon':
+    if ground_truth == 'mascon':
         # If not given, set these keyword arguments in this case
         mascon_points, mascon_masses = load_mascon_data(sample)
         kwargs.setdefault("mascon_points", mascon_points)
         kwargs.setdefault("mascon_masses", mascon_masses)
         label_function, prediction_function = _validation_mascon(model, encoding, use_acc, N_integration, **kwargs)
         return _validation(label_function, prediction_function, sample, **kwargs)
-    elif method == 'polyhedral':
+    elif ground_truth == 'polyhedral':
         # If not given, set these keyword arguments in this case
         mesh_vertices, mesh_edges = load_polyhedral_mesh(sample)
         kwargs.setdefault("mesh_vertices", mesh_vertices)
         kwargs.setdefault("mesh_edges", mesh_edges)
         label_function, prediction_function = _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs)
         return _validation(label_function, prediction_function, sample, **kwargs)
-    elif method == 'polyhedral-mascon':
+    elif ground_truth == 'polyhedral-mascon':
         # Model is not required and can be None in these cases
         mascon_label, _ = _validation_mascon(model, encoding, use_acc, N_integration, **kwargs)
         polyhedral_label, _ = _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs)
         return _validation(polyhedral_label, mascon_label, sample, **kwargs)
     else:
-        raise NotImplementedError(f"The method {method} is not implemented!")
+        raise NotImplementedError(f"The method {ground_truth} is not implemented!")
 
 
 def _validation_mascon(model, encoding, use_acc, N_integration, **kwargs):

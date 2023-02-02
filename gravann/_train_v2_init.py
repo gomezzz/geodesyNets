@@ -31,11 +31,11 @@ def init_environment(parameters: {str, any}) -> str:
     # Create folder for this specific run
     run_folder = f"""
         {parameters['output_folder']}/
-        {parameters['method']}/
+        {parameters['ground_truth']}/
         {parameters['sample']}/
         LR={parameters['learning_rate']}_loss={parameters['parameters'].__name__}_ENC={parameters['encoding'].name}_
         BS={parameters['batch_size']}_layers={parameters['hidden_layers']}_neurons={parameters['n_neurons']}_
-        METHOD={parameters['target_sample_method']}_DOMAIN={domain}/
+        METHOD={parameters['sample_method']}_DOMAIN={domain}/
         """
     pathlib.Path(run_folder).mkdir(parents=True, exist_ok=True)
     return run_folder
@@ -111,42 +111,42 @@ def init_training_sampler(sample: str, target_sample_method: str, sample_domain:
     )
 
 
-def init_prediction_label(integrator, model, encoding, N, integration_domain):
+def init_prediction_label(integrator, model, encoding, integration_points, integration_domain):
     """Inits the prediction labels by binding relevant data to the evaluation function.
 
     Args:
         integrator: the integrator, e.g. trapezoid rule
         model: the neural network to bind
         encoding: the network's encoding
-        N: the number of points
+        integration_points: the number of integration points
         integration_domain: the intervall
 
     Returns:
         prediction function taking measurement points as input
 
     """
-    return lambda points: integrator(points, model, encoding, N=N, domain=integration_domain)
+    return lambda points: integrator(points, model, encoding, N=integration_points, domain=integration_domain)
 
 
-def init_ground_truth_labels(method, sample):
+def init_ground_truth_labels(ground_truth, sample):
     """Inits the ground truth labels by binding relevant data from the sample to the evaluation function.
 
     Args:
-        method: either 'polyhedral' or 'mascon'
+        ground_truth: either 'polyhedral' or 'mascon'
         sample: the sample body's name
 
     Returns:
         label function taking measurement points as input
 
     """
-    if method == 'polyhedral':
+    if ground_truth == 'polyhedral':
         mesh_vertices, mesh_edges = load_polyhedral_mesh(sample)
         return _init_polyhedral_label(mesh_vertices, mesh_edges)
-    elif method == 'mascon':
+    elif ground_truth == 'mascon':
         mascon_points, mascon_masses_u = load_mascon_data(sample)
         return _init_polyhedral_label(mascon_points, mascon_masses_u)
     else:
-        raise NotImplemented(f"The method {method} is not implemented!")
+        raise NotImplemented(f"The method {ground_truth} is not implemented!")
 
 
 def _init_polyhedral_label(mesh_vertices, mesh_edges):
@@ -161,7 +161,7 @@ def _init_mascon_label(mascon_points, mascon_masses):
     return lambda points: MASCON_ACC_L(points, mascon_points, mascon_masses)
 
 
-def init_noise(ground_truth_labels):
+def _init_noise(ground_truth_labels):
     """Inits noise by adding a noise function on top of the given ground truth labeling function.
 
     Args:

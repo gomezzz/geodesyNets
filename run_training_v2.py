@@ -1,3 +1,4 @@
+import itertools
 import os
 import sys
 
@@ -8,62 +9,100 @@ import torch
 import gravann
 
 
-def run(cfg, results_df):
+def run(cfg: dict, results_df: pd.DataFrame) -> None:
     """This function runs all the permutations of above settings
     """
-    print("#############  Initializing    ################")
     print("Using the following samples:", cfg["samples"])
-    print("###############################################")
     gravann.enableCUDA()
     print("Will use device ", os.environ["TORCH_DEVICE"])
-    print("###############################################")
 
+    print("## - START WITH ITERATIONS")
     for sample in cfg["samples"]:
-        print(f"\n--------------- STARTING {sample} ----------------")
-        print(f"\nModel: {cfg['model']['type']}")
-        # If limited, compute integration_domain, else will be [-1,1]^3
+        print(f"#### - SAMPLE START {sample}")
         if cfg["integration"]["limit_domain"]:
-            cfg["integration"]["domain"] = gravann.get_asteroid_bounding_box(asteroid_pk_path="3dmeshes/" + sample)
-        for loss in cfg["training"]["losses"]:
-            for encoding in cfg["model"]["encoding"]:
-                for batch_size in cfg["training"]["batch_sizes"]:
-                    for target_sample_method in cfg["model"]["target_point_samplers"]:
-                        for activation in cfg["model"]["activation"]:
-                            for omega in cfg["siren"]["omega"]:
-                                for hidden_layers in cfg["model"]["hidden_layers"]:
-                                    for n_neurons in cfg["model"]["n_neurons"]:
-                                        print(
-                                            f"\n ---------- RUNNING CONFIG -------------")
-                                        print(
-                                            f"|LR={cfg['training']['lr']}\t\t\tloss={loss.__name__}\t\tencoding={encoding().name}|")
-                                        print(
-                                            f"|target_sample={target_sample_method}\tactivation={str(activation)[:-2]}\t\tbatch_size={batch_size}|")
-                                        print(
-                                            f"--------------------------------------------")
-                                        run_results = gravann.run_training(cfg, sample, loss,
-                                                                           encoding(), batch_size,
-                                                                           target_sample_method,
-                                                                           activation, omega,
-                                                                           hidden_layers, n_neurons)
-                                        results_df = results_df.append(
-                                            run_results, ignore_index=True)
-        print("###############################################")
-        print("#############       SAMPLE DONE     ###########")
-        print("###############################################")
-
-    print(f"Writing results csv to {cfg['output_folder']}. \n")
-
-    if os.path.isfile(cfg["output_folder"] + "/" + "results.csv"):
-        previous_results = pd.read_csv(
-            cfg["output_folder"] + "/" + "results.csv")
+            cfg["integration"]["domain"] = gravann.get_asteroid_bounding_box(asteroid_pk_path=f"3dmeshes/{sample}")
+        for (
+                ground_truth,
+                loss, batch_size, learning_rate,
+                encoding, activation, hidden_layers, n_neurons, model_type,
+                omega,
+                sample_method, sample_domain,
+        ) in itertools.product(
+            cfg["ground_truth"],
+            cfg["training"]["loss"],
+            cfg["training"]["batch_size"],
+            cfg["training"]["learning_rate"],
+            cfg["model"]["encoding"],
+            cfg["model"]["activation"],
+            cfg["model"]["hidden_layers"],
+            cfg["model"]["n_neurons"],
+            cfg["model"]["type"],
+            cfg["siren"]["omega"],
+            cfg["target_sampling"]["method"],
+            cfg["target_sampling"]["domain"]
+        ):
+            print("###### - SINGLE RUN START")
+            run_results = gravann.run_training_v2({
+                ########################################################################################################
+                # Name of the sample and other administrative stuff
+                ########################################################################################################
+                "sample": sample,
+                "output_folder": cfg["output_folder"],
+                "plotting_points": cfg["plotting_points"],
+                ########################################################################################################
+                # Chosen Ground Truth
+                ########################################################################################################
+                "ground_truth": ground_truth,
+                ########################################################################################################
+                # Training configuration & Validation Configuration
+                ########################################################################################################
+                "loss_fn": loss,
+                "batch_size": batch_size,
+                "learning_rate": learning_rate,
+                "iterations": cfg["training"]["iterations"],
+                "validation_points": cfg["training"]["validation_points"],
+                "use_acceleration": True,
+                ########################################################################################################
+                # Model Configuration
+                ########################################################################################################
+                "encoding": encoding,
+                "activation": activation,
+                "hidden_layers": hidden_layers,
+                "n_neurons": n_neurons,
+                "model_type": model_type,
+                ########################################################################################################
+                # Sirene Configuration
+                ########################################################################################################
+                "omega": omega,
+                ########################################################################################################
+                # Target Point Sampling Configuration
+                ########################################################################################################
+                "sample_method": sample_method,
+                "sample_domain": sample_domain,
+                ########################################################################################################
+                # Noise Configuration
+                ########################################################################################################
+                "noise": None,
+                ########################################################################################################
+                # Integration Configuration
+                ########################################################################################################
+                "integrator": gravann.ACC_trap,
+                "integration_points": cfg["integration"]["points"],
+                "integration_domain": cfg["integration"]["domain"]
+            })
+            results_df = results_df.append(run_results, ignore_index=True)
+            print("###### - SINGLE RUN DONE")
+        print(f"#### - SAMPLE {sample} DONE")
+    print("## - ALL ITERATIONS DONE")
+    print(f"Writing results csv to {cfg['output_folder']}")
+    if os.path.isfile(f"{cfg['output_folder']}/results.csv"):
+        previous_results = pd.read_csv(f"{cfg['output_folder']}/results.csv")
         results_df = pd.concat([previous_results, results_df])
-    results_df.to_csv(cfg["output_folder"] + "/" + "results.csv", index=False)
-    print("###############################################")
-    print("#############   TUTTO FATTO :)    #############")
-    print("###############################################")
+    results_df.to_csv(f"{cfg['output_folder']}/results.csv", index=False)
+    print("## - EVERYTHING DONE")
 
 
-def _init_env(cfg):
+def _init_env(cfg: dict) -> (dict, pd.DataFrame):
     # Select GPUs
     os.environ["CUDA_VISIBLE_DEVICES"] = cfg["cuda_devices"]
 
@@ -87,19 +126,20 @@ def _init_env(cfg):
     # Init results dataframe
     results_df = pd.DataFrame(
         columns=["Sample", "Type", "Model", "Loss", "Encoding", "Integrator", "Activation", "Batch Size", "LR",
-                 "Method", "Target Sampler", "Noise", "Integration Points", "Final Loss", "Final WeightedAvg Loss"])
+                 "Ground Truth", "Target Sampler", "Noise", "Integration Points", "Final Loss",
+                 "Final WeightedAvg Loss"])
 
     return cfg, results_df
 
 
-def _cfg_to_func(cfg):
+def _cfg_to_func(cfg: dict) -> dict:
     losses, encodings, activations = [], [], []
 
-    for loss in cfg["training"]["losses"]:
+    for loss in cfg["training"]["loss"]:
         losses.append(getattr(gravann, loss))
 
     for encoding in cfg["model"]["encoding"]:
-        encodings.append(getattr(gravann, encoding))
+        encodings.append(getattr(gravann, encoding)())
 
     for activation in cfg["model"]["activation"]:
         if activation == "Abs":
@@ -107,7 +147,7 @@ def _cfg_to_func(cfg):
         else:
             activations.append(getattr(torch.nn, activation)())
 
-    cfg["training"]["losses"] = losses
+    cfg["training"]["loss"] = losses
     cfg["model"]["encoding"] = encodings
     cfg["model"]["activation"] = activations
     return cfg
