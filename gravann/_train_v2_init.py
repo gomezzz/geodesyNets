@@ -153,7 +153,7 @@ def init_ground_truth_labels(ground_truth: str, input_data: dict):
 
     Args:
         ground_truth: either 'polyhedral' or 'mascon'
-        data: dictionary containing mesh and mascon information
+        input_data: dictionary containing mesh and mascon information
 
     Returns:
         label function taking measurement points as input and input read
