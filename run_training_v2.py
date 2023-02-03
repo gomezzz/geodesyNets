@@ -62,6 +62,7 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
                 "validation_points": cfg["training"]["validation_points"],
                 "validation_ground_truth": cfg["training"]["validation_ground_truth"],
                 "use_acceleration": cfg["model"]["use_acceleration"],
+                "validation_sampling_altitudes": cfg["training"]["validation_sampling_altitudes"],
                 ########################################################################################################
                 # Model Configuration
                 ########################################################################################################

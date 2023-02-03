@@ -140,7 +140,8 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
     print("Validating...")
     validation_kwargs = {
         "N": cfg["validation_points"],
-        "progressbar": False
+        "progressbar": False,
+        "sampling_altitudes": cfg["validation_sampling_altitudes"]
     }
     validation_kwargs.update(input_data)
     validation_results = validation_v2(

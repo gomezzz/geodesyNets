@@ -51,6 +51,7 @@ loss = [
 ]
 validation_points = 1000
 validation_ground_truth = "polyhedral"
+validation_sampling_altitudes = [0.05, 0.1, 0.25]
 
 [target_sampling]
 method = [
