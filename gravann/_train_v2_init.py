@@ -1,9 +1,9 @@
 import pathlib
 
-from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, calculate_density
+from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L, calculate_density
 from . import load_polyhedral_mesh, load_mascon_data
 from ._encodings import *
-from ._mascon_labels import ACC_L as MASCON_ACC_L
+from ._mascon_labels import ACC_L as MASCON_ACC_L, U_L as MASCON_U_L
 from ._sample_observation_points import get_target_point_sampler
 from ._train import init_network
 from ._utils import fixRandomSeeds, EarlyStopping
@@ -148,12 +148,13 @@ def init_input_data(sample: str) -> dict:
     }
 
 
-def init_ground_truth_labels(ground_truth: str, input_data: dict):
+def init_ground_truth_labels(ground_truth: str, input_data: dict, use_acc=True):
     """Inits the ground truth labels by binding relevant data from the sample to the evaluation function.
 
     Args:
         ground_truth: either 'polyhedral' or 'mascon'
         input_data: dictionary containing mesh and mascon information
+        use_acc: use ACC_L instead of U_L
 
     Returns:
         label function taking measurement points as input and input read
@@ -161,23 +162,29 @@ def init_ground_truth_labels(ground_truth: str, input_data: dict):
     """
     if ground_truth == 'polyhedral':
         density = calculate_density(input_data["mesh_vertices"], input_data["mesh_faces"])
-        return _init_polyhedral_label(input_data["mesh_vertices"], input_data["mesh_faces"], density)
+        return _init_polyhedral_label(input_data["mesh_vertices"], input_data["mesh_faces"], density, use_acc)
     elif ground_truth == 'mascon':
-        return _init_mascon_label(input_data["mascon_points"], input_data["mascon_masses"])
+        return _init_mascon_label(input_data["mascon_points"], input_data["mascon_masses"], use_acc)
     else:
         raise NotImplemented(f"The method {ground_truth} is not implemented!")
 
 
-def _init_polyhedral_label(mesh_vertices, mesh_edges, density):
+def _init_polyhedral_label(mesh_vertices, mesh_edges, density, use_acc=True):
     """Inits the polyhedral labels by binding mesh_vertices and mesh_edges to the evaluation function.
     """
-    return lambda points: POLYHEDRAL_ACC_L(points, mesh_vertices, mesh_edges, density)
+    if use_acc:
+        return lambda points: POLYHEDRAL_ACC_L(points, mesh_vertices, mesh_edges, density)
+    else:
+        return lambda points: POLYHEDRAL_U_L(points, mesh_vertices, mesh_edges, density)
 
 
-def _init_mascon_label(mascon_points, mascon_masses):
+def _init_mascon_label(mascon_points, mascon_masses, use_acc=True):
     """Inits the mascon labels by binding mascon_points and (uniform) mascon_masses to the evaluation function.
     """
-    return lambda points: MASCON_ACC_L(points, mascon_points, mascon_masses)
+    if use_acc:
+        return lambda points: MASCON_ACC_L(points, mascon_points, mascon_masses)
+    else:
+        return lambda points: MASCON_U_L(points, mascon_points, mascon_masses)
 
 
 def _init_noise(ground_truth_labels):

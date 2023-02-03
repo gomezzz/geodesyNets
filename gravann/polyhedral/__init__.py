@@ -4,6 +4,7 @@ Submodule containing everything related to the polyhedral gravity model
 
 # The plotting capabilities
 from ._plots_polyhedral_model import plot_compare_acceleration
+from ._plots_grid import plot_grid_2d
 # The core: the polyhedral labels
 from ._polyhedral_labels import U_L, ACC_L
 # Polyhedral utility

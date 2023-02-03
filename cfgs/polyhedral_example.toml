@@ -19,7 +19,7 @@ activation = [
 encoding = [
     "direct_encoding"
 ]
-use_acceleration = true
+use_acceleration = false
 type = "siren"
 hidden_layers = [
     3
@@ -39,7 +39,7 @@ limit_domain = false
 domain = [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]]
 
 [training]
-iterations = 5
+iterations = 500
 batch_size = [
     100
 ]

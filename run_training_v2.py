@@ -61,7 +61,7 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
                 "iterations": cfg["training"]["iterations"],
                 "validation_points": cfg["training"]["validation_points"],
                 "validation_ground_truth": cfg["training"]["validation_ground_truth"],
-                "use_acceleration": True,
+                "use_acceleration": cfg["model"]["use_acceleration"],
                 ########################################################################################################
                 # Model Configuration
                 ########################################################################################################
@@ -86,7 +86,7 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
                 ########################################################################################################
                 # Integration Configuration
                 ########################################################################################################
-                "integrator": gravann.ACC_trap,
+                "integrator": cfg["integrator"],
                 "integration_points": cfg["integration"]["points"],
                 "integration_domain": cfg["integration"]["domain"]
             })

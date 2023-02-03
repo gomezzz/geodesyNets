@@ -13,6 +13,7 @@ from ._train_v2_init import init_training_sampler, init_environment, init_model_
     init_ground_truth_labels, init_input_data
 from ._validation import validation_results_unpack_df
 from ._validation_v2 import validation_v2
+from .polyhedral import plot_grid_2d
 
 
 def train_on_batch_v2(points, prediction_fn, labels, loss_fn, optimizer, scheduler):
@@ -81,7 +82,7 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
     # Initialize the prediction function by binding the model and defined configuration parameters
     prediction_fn = init_prediction_label(
         integrator=cfg["integrator"], model=model, encoding=cfg["encoding"],
-        integration_points=cfg["integration_points"], integration_domain=cfg["integration_domain"]
+        integration_points=cfg["integration_points"], integration_domain=cfg["integration_domain"],
     )
     # Initialize the input data
     input_data = init_input_data(
@@ -89,7 +90,7 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
     )
     # Initialize the label function by binding the sample data
     label_fn = init_ground_truth_labels(
-        ground_truth=cfg["ground_truth"], input_data=input_data
+        ground_truth=cfg["ground_truth"], input_data=input_data, use_acc=cfg["use_acceleration"]
     )
 
     # When a new network is created: init empty training logs and loss trend indicators
@@ -101,7 +102,8 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
     # At the beginning (first plots) we assume no learned c
     c = 1.
     for it in t:
-        # TODO Each hundred epochs we could produce the plots
+        if it % 100 == 0 and not cfg["use_acceleration"]:
+            plot_grid_2d(label_fn, prediction_fn, (cfg["ground_truth"], "model"), "Potential Plot", f"pot_{run_folder}_{it}")
         # Each ten epochs we resample the target points
         if it % 10 == 0:
             target_points = target_points_sampler()
