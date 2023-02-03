@@ -19,7 +19,7 @@ activation = [
 encoding = [
     "direct_encoding"
 ]
-use_acceleration = false
+use_acceleration = true
 type = "siren"
 hidden_layers = [
     3
