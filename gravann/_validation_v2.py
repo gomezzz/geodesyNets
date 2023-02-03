@@ -3,7 +3,7 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L
+from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L, calculate_density
 from . import compute_c_for_model, load_polyhedral_mesh, load_mascon_data
 from ._integration import ACC_trap, U_trap_opt, compute_integration_grid
 from ._losses import contrastive_loss, normalized_L1_loss, normalized_relative_L2_loss, \
@@ -42,17 +42,9 @@ def validation_v2(model, encoding, sample, ground_truth, use_acc=True, N_integra
 
     """
     if ground_truth == 'mascon':
-        # If not given, set these keyword arguments in this case
-        mascon_points, mascon_masses = load_mascon_data(sample)
-        kwargs.setdefault("mascon_points", mascon_points)
-        kwargs.setdefault("mascon_masses", mascon_masses)
         label_function, prediction_function = _validation_mascon(model, encoding, use_acc, N_integration, **kwargs)
         return _validation(label_function, prediction_function, sample, **kwargs)
     elif ground_truth == 'polyhedral':
-        # If not given, set these keyword arguments in this case
-        mesh_vertices, mesh_faces = load_polyhedral_mesh(sample)
-        kwargs.setdefault("mesh_vertices", mesh_vertices)
-        kwargs.setdefault("mesh_faces", mesh_faces)
         label_function, prediction_function = _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs)
         return _validation(label_function, prediction_function, sample, **kwargs)
     elif ground_truth == 'polyhedral-mascon':
@@ -102,6 +94,7 @@ def _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs):
     """Generates the label_function and the prediction function for the polyhedral model
     """
     mesh_vertices, mesh_faces, = kwargs['mesh_vertices'], kwargs['mesh_faces']
+    density = calculate_density(mesh_vertices, mesh_faces)
     integration_grid, h, N_int = compute_integration_grid(N_integration)
     if use_acc:
         label_function = POLYHEDRAL_ACC_L
@@ -110,7 +103,7 @@ def _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs):
         label_function = POLYHEDRAL_U_L
         integrator = U_trap_opt
     return (
-        lambda points: label_function(points, mesh_vertices, mesh_faces),
+        lambda points: label_function(points, mesh_vertices, mesh_faces, density),
         lambda points: integrator(points, model, encoding, N=N_int, h=h, sample_points=integration_grid)
     )
 

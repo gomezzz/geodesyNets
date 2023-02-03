@@ -60,6 +60,7 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
                 "learning_rate": learning_rate,
                 "iterations": cfg["training"]["iterations"],
                 "validation_points": cfg["training"]["validation_points"],
+                "validation_ground_truth": cfg["training"]["validation_ground_truth"],
                 "use_acceleration": True,
                 ########################################################################################################
                 # Model Configuration
@@ -89,7 +90,7 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
                 "integration_points": cfg["integration"]["points"],
                 "integration_domain": cfg["integration"]["domain"]
             })
-            # results_df = results_df.append(run_results, ignore_index=True)
+            results_df = results_df.append(run_results, ignore_index=True)
             print("######## - SINGLE RUN DONE")
         print(f"###### - SAMPLE {sample} DONE")
     print("#### - ALL ITERATIONS DONE")

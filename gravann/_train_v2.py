@@ -10,7 +10,7 @@ from ._io import save_results, save_plots_v2
 from ._losses import contrastive_loss, normalized_relative_L2_loss, normalized_relative_component_loss
 # Required for loading runs
 from ._train_v2_init import init_training_sampler, init_environment, init_model_and_optimizer, init_prediction_label, \
-    init_ground_truth_labels
+    init_ground_truth_labels, init_input_data
 from ._validation import validation_results_unpack_df
 from ._validation_v2 import validation_v2
 
@@ -48,7 +48,7 @@ def train_on_batch_v2(points, prediction_fn, labels, loss_fn, optimizer, schedul
     return loss, c
 
 
-def run_training_v2(cfg: {str, any}):
+def run_training_v2(cfg: dict) -> pd.DataFrame:
     """Runs a specific parameter configuration.
 
     Args:
@@ -83,12 +83,16 @@ def run_training_v2(cfg: {str, any}):
         integrator=cfg["integrator"], model=model, encoding=cfg["encoding"],
         integration_points=cfg["integration_points"], integration_domain=cfg["integration_domain"]
     )
+    # Initialize the input data
+    input_data = init_input_data(
+        sample=cfg["sample"]
+    )
     # Initialize the label function by binding the sample data
     label_fn = init_ground_truth_labels(
-        ground_truth=cfg["ground_truth"], sample=cfg["sample"]
+        ground_truth=cfg["ground_truth"], input_data=input_data
     )
 
-    # When a new network is created we init empty training logs and we init some loss trend indicators
+    # When a new network is created: init empty training logs and loss trend indicators
     loss_log, lr_log, weighted_average_log, n_inferences = [], [], [], []
     weighted_average = deque([], maxlen=20)
     target_points, labels = [], []
@@ -129,17 +133,26 @@ def run_training_v2(cfg: {str, any}):
     # Restore best checkpoint
     print("Restoring best checkpoint for validation...")
     model.load_state_dict(torch.load(run_folder + "best_model.mdl"))
+
+    # Compute the validation
     print("Validating...")
-    validation_results = validation_v2(model=model, encoding=cfg["encoding"], sample=cfg["sample"],
-                                       ground_truth=cfg["ground_truth"], use_acc=cfg.get("use_acceleration", True),
-                                       N_integration=cfg["integration_points"], N=cfg["validation_points"],
-                                       progressbar=False)
+    validation_kwargs = {
+        "N": cfg["validation_points"],
+        "progressbar": False
+    }
+    validation_kwargs.update(input_data)
+    validation_results = validation_v2(
+        model,
+        cfg["encoding"],
+        cfg["sample"],
+        cfg["validation_ground_truth"],
+        cfg.get("use_acceleration", True),
+        500000,
+        **validation_kwargs
+    )
 
     print("Saving...")
-    save_results(
-        loss_log, weighted_average_log,
-        validation_results, model, run_folder
-    )
+    save_results(loss_log, weighted_average_log, validation_results, model, run_folder)
 
     save_plots_v2(
         model, cfg["encoding"], cfg["sample"],

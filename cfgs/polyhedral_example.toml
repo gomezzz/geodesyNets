@@ -2,7 +2,8 @@ name = "polyhedral-example"
 cuda_devices = "0"
 plotting_points = 2500
 ground_truth = [
-    "polyhedral"
+    "polyhedral",
+    "mascon"
 ]
 samples = [
     "Churyumov-Gerasimenko"
@@ -29,13 +30,14 @@ limit_domain = false
 domain = [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]]
 
 [training]
-iterations = 1
+iterations = 5
 batch_size = [100]
 learning_rate = [1e-4]
 loss = [
     "normalized_L1_loss"
 ]
-validation_points = 1
+validation_points = 1000
+validation_ground_truth = "polyhedral"
 
 [target_sampling]
 method = [
