@@ -5,6 +5,7 @@ from collections import deque
 import pandas as pd
 from tqdm import tqdm
 
+from . import plot_model_rejection
 from ._encodings import *
 from ._io import save_results, save_plots_v2
 from ._losses import contrastive_loss, normalized_relative_L2_loss, normalized_relative_component_loss
@@ -115,6 +116,11 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
             plot_grid_2d(
                 label_fn_potential, prediction_fn_potential,
                 ("polyhedral", "model"), "Potential Plot", run_folder, it
+            )
+            plot_model_rejection(
+                model, encoding=cfg["encoding"],
+                views_2d=True, bw=True, N=cfg["plotting_points"], alpha=0.1, s=50, c=c,
+                save_path=f"{run_folder}rejection_plot_iter{it}.png"
             )
         # Each ten epochs we resample the target points
         if it % 10 == 0:

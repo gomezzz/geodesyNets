@@ -42,7 +42,7 @@ def plot_grid_2d(eval_fn1, eval_fn2, fn_names, title, filename, it, limits=(-2, 
     ax.set_ylim(left_limit, right_limit)
     ax.axis('equal')
     ax.set_title(title)
-    fig.savefig(pathlib.Path(filename, f"pot_{it}_difference.png"), dpi=300)
+    fig.savefig(pathlib.Path(filename, f"pot_difference_iter{it}.png"), dpi=300)
 
     fig, ax = plt.subplots(figsize=(5, 5))
     surf = ax.contourf(values, values, eval_res2, cmap=cm.viridis)
@@ -51,7 +51,7 @@ def plot_grid_2d(eval_fn1, eval_fn2, fn_names, title, filename, it, limits=(-2, 
     ax.set_ylim(left_limit, right_limit)
     ax.axis('equal')
     ax.set_title(title)
-    fig.savefig(pathlib.Path(filename, f"pot_{it}_{name_fn2}.png"), dpi=300)
+    fig.savefig(pathlib.Path(filename, f"pot_{name_fn2}_iter{it}.png"), dpi=300)
 
 
 def plot_quiver(X, Y, xy, title, filename, labels=("$x$", "$y$"), limits=(-2, 2), plot_rectangle=False, vertices=None,
