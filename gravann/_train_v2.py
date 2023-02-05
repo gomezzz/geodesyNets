@@ -2,6 +2,7 @@ import pickle as pk
 import time
 from collections import deque
 
+import matplotlib.pyplot as plt
 import pandas as pd
 from tqdm import tqdm
 
@@ -122,6 +123,7 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
                 views_2d=True, bw=True, N=cfg["plotting_points"], alpha=0.1, s=50, c=c,
                 save_path=f"{run_folder}rejection_plot_iter{it}.png"
             )
+            plt.close('all')
         # Each ten epochs we resample the target points
         if it % 10 == 0:
             target_points = target_points_sampler()
