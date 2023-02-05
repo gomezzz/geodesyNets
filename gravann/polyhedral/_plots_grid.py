@@ -3,9 +3,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib import cm
+import pathlib
 
 
-def plot_grid_2d(eval_fn1, eval_fn2, fn_names, title, filename, limits=(-2, 2), plane='XY'):
+def plot_grid_2d(eval_fn1, eval_fn2, fn_names, title, filename, it, limits=(-2, 2), plane='XY'):
     """Plots the potential in 2D for a given cross-section.
 
     Args:
@@ -14,6 +15,7 @@ def plot_grid_2d(eval_fn1, eval_fn2, fn_names, title, filename, limits=(-2, 2), 
         fn_names: model function taking point to calculate the potential
         title (str): the title of the plot
         filename (str): the filename/ path
+        it (int): iteration number
         limits (float, float): the limits of the axes
         plane (str): the plane cross-section to plot
 
@@ -40,7 +42,7 @@ def plot_grid_2d(eval_fn1, eval_fn2, fn_names, title, filename, limits=(-2, 2), 
     ax.set_ylim(left_limit, right_limit)
     ax.axis('equal')
     ax.set_title(title)
-    fig.savefig(f"{filename}_difference_{name_fn1}_{name_fn2}.png", dpi=300)
+    fig.savefig(pathlib.Path(filename, f"pot_{it}_difference.png"), dpi=300)
 
     fig, ax = plt.subplots(figsize=(5, 5))
     surf = ax.contourf(values, values, eval_res2, cmap=cm.viridis)
@@ -49,7 +51,7 @@ def plot_grid_2d(eval_fn1, eval_fn2, fn_names, title, filename, limits=(-2, 2), 
     ax.set_ylim(left_limit, right_limit)
     ax.axis('equal')
     ax.set_title(title)
-    fig.savefig(f"{filename}_{name_fn2}.png", dpi=300)
+    fig.savefig(pathlib.Path(filename, f"pot_{it}_{name_fn2}.png"), dpi=300)
 
 
 def plot_quiver(X, Y, xy, title, filename, labels=("$x$", "$y$"), limits=(-2, 2), plot_rectangle=False, vertices=None,

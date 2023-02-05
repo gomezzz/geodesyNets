@@ -120,7 +120,7 @@ def _init_env(cfg: dict) -> (dict, pd.DataFrame):
     if cfg["integration"]["limit_domain"]:
         cfg["name"] = cfg["name"] + "_" + "limit_int"
 
-    cfg["output_folder"] = "results/" + cfg["name"] + "/"
+    cfg["output_folder"] = "results/" + cfg["name"]
 
     # Init results dataframe
     results_df = pd.DataFrame(

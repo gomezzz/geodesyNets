@@ -114,7 +114,7 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
         if it % 100 == 0:
             plot_grid_2d(
                 label_fn_potential, prediction_fn_potential,
-                ("polyhedral", "model"), "Potential Plot", f"pot_{run_folder}_{it}"
+                ("polyhedral", "model"), "Potential Plot", run_folder, it
             )
         # Each ten epochs we resample the target points
         if it % 10 == 0:
