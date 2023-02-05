@@ -81,8 +81,14 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
     )
     # Initialize the prediction function by binding the model and defined configuration parameters
     prediction_fn = init_prediction_label(
-        integrator=cfg["integrator"], model=model, encoding=cfg["encoding"],
+        model=model, encoding=cfg["encoding"],
         integration_points=cfg["integration_points"], integration_domain=cfg["integration_domain"],
+        use_acc=cfg["use_acceleration"]
+    )
+    prediction_fn_potential = init_prediction_label(
+        model=model, encoding=cfg["encoding"],
+        integration_points=cfg["integration_points"], integration_domain=cfg["integration_domain"],
+        use_acc=False
     )
     # Initialize the input data
     input_data = init_input_data(
@@ -91,6 +97,9 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
     # Initialize the label function by binding the sample data
     label_fn = init_ground_truth_labels(
         ground_truth=cfg["ground_truth"], input_data=input_data, use_acc=cfg["use_acceleration"]
+    )
+    label_fn_potential = init_ground_truth_labels(
+        ground_truth='polyhedral', input_data=input_data, use_acc=False
     )
 
     # When a new network is created: init empty training logs and loss trend indicators
@@ -102,8 +111,11 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
     # At the beginning (first plots) we assume no learned c
     c = 1.
     for it in t:
-        if it % 100 == 0 and not cfg["use_acceleration"]:
-            plot_grid_2d(label_fn, prediction_fn, (cfg["ground_truth"], "model"), "Potential Plot", f"pot_{run_folder}_{it}")
+        if it % 100 == 0:
+            plot_grid_2d(
+                label_fn_potential, prediction_fn_potential,
+                ("polyhedral", "model"), "Potential Plot", f"pot_{run_folder}_{it}"
+            )
         # Each ten epochs we resample the target points
         if it % 10 == 0:
             target_points = target_points_sampler()
@@ -177,7 +189,8 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
                 "LR": cfg["learning_rate"],
                 "Ground Truth": cfg["ground_truth"],
                 "Noise": cfg["noise"],
-                "Target Sampler": cfg["sample_method"],
+                "Target Sampler Method": cfg["sample_method"],
+                "Target Sampler Domain": cfg["sample_domain"],
                 "Integration Points": cfg["integration_points"],
                 "c": c}
 
@@ -201,7 +214,8 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
                          "Batch Size": cfg["batch_size"],
                          "LR": cfg["learning_rate"],
                          "Ground Truth": cfg["ground_truth"],
-                         "Target Sampler": cfg["sample_method"],
+                         "Target Sampler Method": cfg["sample_method"],
+                         "Target Sampler Domain": cfg["sample_domain"],
                          "Noise": cfg["noise"],
                          "Integration Points": cfg["integration_points"],
                          "Runtime": runtime,

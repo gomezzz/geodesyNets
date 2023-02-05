@@ -1,10 +1,11 @@
-import numpy as np
-import torch
-import warnings
-import sobol_seq
-from ._encodings import direct_encoding
-
 import os
+import warnings
+
+import numpy as np
+import sobol_seq
+import torch
+
+from ._encodings import direct_encoding
 
 
 def compute_sobol_points(N=3,M=500000):
@@ -151,9 +152,9 @@ def U_trap_opt(target_points, model, encoding=direct_encoding(), N=10000, verbos
     Returns:
         Tensor: Computed potentials per point
     """
-    # if domain is not None:
-    #     raise NotImplementedError(
-    #         "Custom domain is not yet implemented for U_trap_opt.")
+    if domain is not None:
+        raise NotImplementedError(
+            "Custom domain is not yet implemented for U_trap_opt.")
 
     # init result vector
     retval = torch.empty(len(target_points), 1,

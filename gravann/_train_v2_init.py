@@ -3,6 +3,7 @@ import pathlib
 from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L, calculate_density
 from . import load_polyhedral_mesh, load_mascon_data
 from ._encodings import *
+from ._integration import ACC_trap, U_trap_opt
 from ._mascon_labels import ACC_L as MASCON_ACC_L, U_L as MASCON_U_L
 from ._sample_observation_points import get_target_point_sampler
 from ._train import init_network
@@ -111,21 +112,24 @@ def init_training_sampler(sample: str, target_sample_method: str, sample_domain:
     )
 
 
-def init_prediction_label(integrator, model, encoding, integration_points, integration_domain):
+def init_prediction_label(model, encoding, integration_points, integration_domain, use_acc=True):
     """Inits the prediction labels by binding relevant data to the evaluation function.
 
     Args:
-        integrator: the integrator, e.g. trapezoid rule
         model: the neural network to bind
         encoding: the network's encoding
         integration_points: the number of integration points
         integration_domain: the intervall
+        use_acc: calculate the acceleration rather than potential
 
     Returns:
         prediction function taking measurement points as input
 
     """
-    return lambda points: integrator(points, model, encoding, N=integration_points, domain=integration_domain)
+    if use_acc:
+        return lambda points: ACC_trap(points, model, encoding, N=integration_points, domain=integration_domain)
+    else:
+        return lambda points: U_trap_opt(points, model, encoding, N=integration_points)
 
 
 def init_input_data(sample: str) -> dict:

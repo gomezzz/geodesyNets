@@ -87,7 +87,7 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
                 ########################################################################################################
                 # Integration Configuration
                 ########################################################################################################
-                "integrator": cfg["integrator"],
+                "integrator": cfg["integrator"],  # Uses currently always trapezoid rule, only for naming
                 "integration_points": cfg["integration"]["points"],
                 "integration_domain": cfg["integration"]["domain"]
             })

@@ -27,7 +27,6 @@ def plot_grid_2d(eval_fn1, eval_fn2, fn_names, title, filename, limits=(-2, 2), 
     computation_points = np.array(np.meshgrid(values, values, [0])).T.reshape(-1, 3)
     computation_points = torch.tensor(computation_points)
 
-
     eval_res1 = eval_fn1(computation_points)
     eval_res2 = eval_fn2(computation_points)
 
@@ -35,7 +34,8 @@ def plot_grid_2d(eval_fn1, eval_fn2, fn_names, title, filename, limits=(-2, 2), 
     eval_res2 = eval_res2.flatten().reshape(shape=(len(values), len(values))).cpu().detach().numpy()
 
     fig, ax = plt.subplots(figsize=(5, 5))
-    ax.contourf(values, values, difference, cmap=cm.viridis)
+    surf = ax.contourf(values, values, difference, cmap=cm.viridis)
+    fig.colorbar(surf, aspect=5, orientation='vertical', shrink=0.5)
     ax.set_xlim(left_limit, right_limit)
     ax.set_ylim(left_limit, right_limit)
     ax.axis('equal')
@@ -43,7 +43,8 @@ def plot_grid_2d(eval_fn1, eval_fn2, fn_names, title, filename, limits=(-2, 2), 
     fig.savefig(f"{filename}_difference_{name_fn1}_{name_fn2}.png", dpi=300)
 
     fig, ax = plt.subplots(figsize=(5, 5))
-    ax.contourf(values, values, eval_res2, cmap=cm.viridis)
+    surf = ax.contourf(values, values, eval_res2, cmap=cm.viridis)
+    fig.colorbar(surf, aspect=5, orientation='vertical', shrink=0.5)
     ax.set_xlim(left_limit, right_limit)
     ax.set_ylim(left_limit, right_limit)
     ax.axis('equal')
