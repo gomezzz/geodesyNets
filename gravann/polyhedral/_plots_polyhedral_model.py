@@ -10,7 +10,7 @@ from .._io import load_polyhedral_mesh, load_mascon_data
 from .._mascon_labels import ACC_L as MASCON_ACC_L
 from .._sample_observation_points import get_target_point_sampler
 
-pv.set_plot_theme("night")
+pv.set_plot_theme("dark")
 
 
 def plot_compare_acceleration(sample: str, compare_mode: (str, str), **kwargs):

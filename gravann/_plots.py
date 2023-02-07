@@ -1,23 +1,24 @@
-from ._sample_observation_points import get_target_point_sampler
-from ._mesh_conversion import create_mesh_from_cloud, create_mesh_from_model
-from ._integration import ACC_trap, U_trap_opt
-from ._mascon_labels import ACC_L
-from ._hulls import is_outside_torch, is_outside
-from ._utils import unpack_triangle_mesh
-
-from matplotlib import pyplot as plt
-import matplotlib as mpl
-from matplotlib.lines import Line2D
-import matplotlib.colors as colors
-import torch
-import math
-import numpy as np
 import pickle as pk
+
+import matplotlib as mpl
+import matplotlib.colors as colors
+import numpy as np
 import pyvista as pv
 import pyvistaqt as pvqt
-from tqdm import tqdm
+import torch
+from matplotlib import pyplot as plt
+from matplotlib.lines import Line2D
 from scipy.spatial.transform import Rotation as rotation
-pv.set_plot_theme("night")
+from tqdm import tqdm
+
+from ._hulls import is_outside_torch, is_outside
+from ._integration import ACC_trap, U_trap_opt
+from ._mascon_labels import ACC_L
+from ._mesh_conversion import create_mesh_from_cloud, create_mesh_from_model
+from ._sample_observation_points import get_target_point_sampler
+from ._utils import unpack_triangle_mesh
+
+pv.set_plot_theme("dark")
 
 
 def plot_model_vs_cloud_mesh(model, gt_mesh, encoding, save_path=None):
