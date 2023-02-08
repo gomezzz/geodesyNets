@@ -35,6 +35,7 @@ def init_environment(parameters: {str, any}) -> str:
         f"{parameters['ground_truth']}/"
         f"{parameters['sample']}/"
         f"LR={parameters['learning_rate']}_loss={parameters['loss_fn'].__name__}_ENC={parameters['encoding'].name}_"
+        f"ACT={str(parameters['activation'])[:-2]}_"
         f"BS={parameters['batch_size']}_layers={parameters['hidden_layers']}_neurons={parameters['n_neurons']}_"
         f"METHOD={parameters['sample_method']}_DOMAIN={domain}/"
     )
