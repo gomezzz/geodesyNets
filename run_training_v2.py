@@ -20,6 +20,7 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
     iterable_parameters = [
         cfg["seed"],
         cfg["ground_truth"],
+        cfg["noise_method"],
         cfg["training"]["loss"],
         cfg["training"]["batch_size"],
         cfg["training"]["learning_rate"],
@@ -40,7 +41,7 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
         if cfg["integration"]["limit_domain"]:
             cfg["integration"]["domain"] = gravann.get_asteroid_bounding_box(asteroid_pk_path=f"3dmeshes/{sample}.pk")
         for (
-                seed, ground_truth,
+                seed, ground_truth, noise_method,
                 loss, batch_size, learning_rate,
                 encoding, activation, hidden_layers, n_neurons,
                 omega,
@@ -54,7 +55,7 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
                 "sample": sample,
                 "output_folder": cfg["output_folder"],
                 "plotting_points": cfg["plotting_points"],
-                "seed": cfg.get("seed", 42),
+                "seed": seed,
                 ########################################################################################################
                 # Chosen Ground Truth
                 ########################################################################################################
@@ -90,7 +91,8 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
                 ########################################################################################################
                 # Noise Configuration
                 ########################################################################################################
-                "noise": None,
+                "noise_method": noise_method,
+                "noise_params": cfg["noise_params"],
                 ########################################################################################################
                 # Integration Configuration
                 ########################################################################################################

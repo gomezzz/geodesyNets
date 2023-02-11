@@ -11,6 +11,14 @@ ground_truth = [
 samples = [
     "churyumov-gerasimenko"
 ]
+noise_method = [
+    "gaussian",
+    "constant_bias"
+]
+[noise_params]
+mean = 5.0
+std = 1.0
+bias = [0.0, 1.0, 0.0]
 [model]
 activation = [
     "Abs",
@@ -61,8 +69,4 @@ method = [
 domain = [
     [0.0, 1.0],
     [1.0, 2.0]
-]
-noise = [
-    ['gaussian', 0.0, 1.0],
-    ['constant_bias', [0.0, 1.0, 0.0]]
 ]

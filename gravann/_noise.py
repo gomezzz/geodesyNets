@@ -4,7 +4,7 @@ import torch.distributions
 from torch import Tensor
 
 
-def get_noise(name: str, label_fn: Callable[[Tensor], Tensor], **kwargs) -> Callable[[Tensor], Tensor]:
+def get_noise_fn(name: str, label_fn: Callable[[Tensor], Tensor], **kwargs) -> Callable[[Tensor], Tensor]:
     """Adds noise to a labeling function's output.
 
     Args:
@@ -22,14 +22,14 @@ def get_noise(name: str, label_fn: Callable[[Tensor], Tensor], **kwargs) -> Call
 
     """
     if name == 'gaussian':
-        return _gaussian_noise(label_fn, **{k: v for k, v in kwargs.items() if k in ['mean', 'std']})
+        return gaussian_noise(label_fn, **{k: v for k, v in kwargs.items() if k in ['mean', 'std']})
     elif name == 'constant_bias':
-        return _constant_bias(label_fn, **{k: v for k, v in kwargs.items() if k in ['bias']})
+        return constant_bias(label_fn, **{k: v for k, v in kwargs.items() if k in ['bias']})
     else:
         raise NotImplementedError(f"The noise method {name} is not implemented!")
 
 
-def _gaussian_noise(
+def gaussian_noise(
         label_fn: Callable[[Tensor], Tensor],
         mean: float = 0.0,
         std: float = 1.0
@@ -49,7 +49,7 @@ def _gaussian_noise(
         label_fn(points_tensor) + torch.distributions.Normal(mean, std).sample(points_tensor.shape)
 
 
-def _constant_bias(
+def constant_bias(
         label_fn: Callable[[Tensor], Tensor],
         bias: Tensor = torch.Tensor([0, 1, 0])
 ) -> Callable[[Tensor], Tensor]:

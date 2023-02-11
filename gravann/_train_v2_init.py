@@ -1,10 +1,12 @@
 import pathlib
+from typing import Callable, Union
 
 from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L, calculate_density
 from . import load_polyhedral_mesh, load_mascon_data
 from ._encodings import *
 from ._integration import ACC_trap, U_trap_opt
 from ._mascon_labels import ACC_L as MASCON_ACC_L, U_L as MASCON_U_L
+from ._noise import get_noise_fn
 from ._sample_observation_points import get_target_point_sampler
 from ._train import init_network
 from ._utils import fixRandomSeeds, EarlyStopping
@@ -192,14 +194,22 @@ def _init_mascon_label(mascon_points, mascon_masses, use_acc=True):
         return lambda points: MASCON_U_L(points, mascon_points, mascon_masses)
 
 
-def _init_noise(ground_truth_labels):
+def init_noise(
+        label_fn: Callable[[torch.Tensor], torch.Tensor], method: Union[str, None], method_param: dict
+) -> Callable[[torch.Tensor], torch.Tensor]:
     """Inits noise by adding a noise function on top of the given ground truth labeling function.
 
     Args:
-        ground_truth_labels: the polyhedral or mascon function only taking points as single argument
+        label_fn: the labeling function taking points producing the ground truth
+        method: the chosen method to generate noise
+        method_param: the additional parameters of the chosen method
+
 
     Returns:
-        None
+        The label function with noise addition
 
     """
-    pass
+    if method is None or method == "":
+        return label_fn
+    else:
+        return get_noise_fn(method, label_fn, **method_param)

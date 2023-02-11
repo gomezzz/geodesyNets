@@ -12,7 +12,7 @@ from ._io import save_results, save_plots_v2
 from ._losses import contrastive_loss, normalized_relative_L2_loss, normalized_relative_component_loss
 # Required for loading runs
 from ._train_v2_init import init_training_sampler, init_environment, init_model_and_optimizer, init_prediction_label, \
-    init_ground_truth_labels, init_input_data
+    init_ground_truth_labels, init_input_data, init_noise
 from ._validation import validation_results_unpack_df
 from ._validation_v2 import validation_v2
 
@@ -93,6 +93,10 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
     # Initialize the label function by binding the sample data
     label_fn = init_ground_truth_labels(
         ground_truth=cfg["ground_truth"], input_data=input_data, use_acc=cfg["use_acceleration"]
+    )
+    # Add noise on top (if defined)
+    label_fn = init_noise(
+        label_fn, cfg["noise_method"], cfg["noise_params"]
     )
 
     # When a new network is created: init empty training logs and loss trend indicators
@@ -184,7 +188,8 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
                 "Batch Size": cfg["batch_size"],
                 "LR": cfg["learning_rate"],
                 "Ground Truth": cfg["ground_truth"],
-                "Noise": cfg["noise"],
+                "Noise Method": cfg["noise_method"],
+                "Noise Params": str(cfg["noise_params"]),
                 "Target Sampler Method": cfg["sample_method"],
                 "Target Sampler Domain": cfg["sample_domain"],
                 "Integration Points": cfg["integration_points"],
@@ -213,7 +218,8 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
                          "Ground Truth": cfg["ground_truth"],
                          "Target Sampler Method": cfg["sample_method"],
                          "Target Sampler Domain": cfg["sample_domain"],
-                         "Noise": cfg["noise"],
+                         "Noise Method": cfg["noise_method"],
+                         "Noise Params": str(cfg["noise_params"]),
                          "Integration Points": cfg["integration_points"],
                          "Runtime": runtime,
                          "Final Loss": loss_log[-1],
