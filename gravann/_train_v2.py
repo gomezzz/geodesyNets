@@ -224,6 +224,5 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
                          "Runtime": runtime,
                          "Final Loss": loss_log[-1],
                          "Final WeightedAvg Loss": weighted_average_log[-1]}
-    results_df = pd.concat(
-        [pd.DataFrame([result_dictionary]), val_res], axis=1)
+    results_df = pd.concat([pd.DataFrame([result_dictionary]), val_res], axis=1)
     return results_df

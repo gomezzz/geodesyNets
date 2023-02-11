@@ -33,6 +33,8 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
         cfg["target_sampling"]["domain"]
     ]
 
+    it: int = 0
+
     combi = functools.reduce(lambda x, y: x * y, map(lambda x: len(x), iterable_parameters)) * len(cfg["samples"])
     print(f"#### - TOTAL AMOUNT OF ITERATIONS {combi}")
 
@@ -92,7 +94,7 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
                 # Noise Configuration
                 ########################################################################################################
                 "noise_method": noise_method,
-                "noise_params": cfg["noise_params"],
+                "noise_params": cfg.get("noise_params", {}),
                 ########################################################################################################
                 # Integration Configuration
                 ########################################################################################################
@@ -101,6 +103,8 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
                 "integration_domain": cfg["integration"]["domain"]
             })
             results_df = results_df.append(run_results, ignore_index=True)
+            results_df.to_csv(f"{cfg['output_folder']}/results_checkpoint_{it}.csv", index=False)
+            it += 1
             print("######## - SINGLE RUN DONE")
         print(f"###### - SAMPLE {sample} DONE")
     print("#### - ALL ITERATIONS DONE")
