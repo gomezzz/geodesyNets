@@ -39,7 +39,7 @@ def init_environment(parameters: {str, any}) -> str:
         f"SEED={parameters['seed']}_LR={parameters['learning_rate']}_LOSS={parameters['loss_fn'].__name__}_"
         f"ENC={parameters['encoding'].name}_ACT={str(parameters['activation'])[:-2]}_"
         f"BS={parameters['batch_size']}_LAYERS={parameters['hidden_layers']}_NEURONS={parameters['n_neurons']}_"
-        f"METHOD={parameters['sample_method']}_DOMAIN={domain}/"
+        f"METHOD={parameters['sample_method']}_DOMAIN={domain}_NOISE={parameters['noise_method']}/"
     )
     pathlib.Path(run_folder).mkdir(parents=True, exist_ok=True)
     return run_folder
