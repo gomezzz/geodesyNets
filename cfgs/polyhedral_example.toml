@@ -1,6 +1,9 @@
 name = "polyhedral-example"
 cuda_devices = "0"
 plotting_points = 2500
+seed = [
+    42
+]
 ground_truth = [
     "polyhedral",
     "mascon"
@@ -8,10 +11,6 @@ ground_truth = [
 samples = [
     "churyumov-gerasimenko"
 ]
-noise = [
-
-]
-
 [model]
 activation = [
     "Abs",
@@ -62,4 +61,8 @@ method = [
 domain = [
     [0.0, 1.0],
     [1.0, 2.0]
+]
+noise = [
+    ['gaussian', 0.0, 1.0],
+    ['constant_bias', [0.0, 1.0, 0.0]]
 ]

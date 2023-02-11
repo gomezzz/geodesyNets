@@ -1,3 +1,4 @@
+import functools
 import itertools
 import os
 import sys
@@ -16,38 +17,44 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
     gravann.enableCUDA()
     print("Will use device ", os.environ["TORCH_DEVICE"])
 
-    print("#### - START WITH ITERATIONS")
+    iterable_parameters = [
+        cfg["seed"],
+        cfg["ground_truth"],
+        cfg["training"]["loss"],
+        cfg["training"]["batch_size"],
+        cfg["training"]["learning_rate"],
+        cfg["model"]["encoding"],
+        cfg["model"]["activation"],
+        cfg["model"]["hidden_layers"],
+        cfg["model"]["n_neurons"],
+        cfg["siren"]["omega"],
+        cfg["target_sampling"]["method"],
+        cfg["target_sampling"]["domain"]
+    ]
+
+    combi = functools.reduce(lambda x, y: x * y, map(lambda x: len(x), iterable_parameters)) * len(cfg["samples"])
+    print(f"#### - TOTAL AMOUNT OF ITERATIONS {combi}")
+
     for sample in cfg["samples"]:
         print(f"###### - SAMPLE START {sample}")
         if cfg["integration"]["limit_domain"]:
             cfg["integration"]["domain"] = gravann.get_asteroid_bounding_box(asteroid_pk_path=f"3dmeshes/{sample}.pk")
         for (
-                ground_truth,
+                seed, ground_truth,
                 loss, batch_size, learning_rate,
                 encoding, activation, hidden_layers, n_neurons,
                 omega,
                 sample_method, sample_domain,
-        ) in itertools.product(
-            cfg["ground_truth"],
-            cfg["training"]["loss"],
-            cfg["training"]["batch_size"],
-            cfg["training"]["learning_rate"],
-            cfg["model"]["encoding"],
-            cfg["model"]["activation"],
-            cfg["model"]["hidden_layers"],
-            cfg["model"]["n_neurons"],
-            cfg["siren"]["omega"],
-            cfg["target_sampling"]["method"],
-            cfg["target_sampling"]["domain"]
-        ):
+        ) in itertools.product(*iterable_parameters):
             print("######## - SINGLE RUN START")
             run_results = gravann.run_training_v2({
                 ########################################################################################################
-                # Name of the sample and other administrative stuff
+                # Name of the sample and other administrative stuff like the chosen seed
                 ########################################################################################################
                 "sample": sample,
                 "output_folder": cfg["output_folder"],
                 "plotting_points": cfg["plotting_points"],
+                "seed": cfg.get("seed", 42),
                 ########################################################################################################
                 # Chosen Ground Truth
                 ########################################################################################################

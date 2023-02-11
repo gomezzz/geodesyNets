@@ -15,7 +15,6 @@ from ._train_v2_init import init_training_sampler, init_environment, init_model_
     init_ground_truth_labels, init_input_data
 from ._validation import validation_results_unpack_df
 from ._validation_v2 import validation_v2
-from .polyhedral import plot_grid_2d
 
 
 def train_on_batch_v2(points, prediction_fn, labels, loss_fn, optimizer, scheduler):
@@ -87,11 +86,6 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
         integration_points=cfg["integration_points"], integration_domain=cfg["integration_domain"],
         use_acc=cfg["use_acceleration"]
     )
-    prediction_fn_potential = init_prediction_label(
-        model=model, encoding=cfg["encoding"],
-        integration_points=cfg["integration_points"], integration_domain=cfg["integration_domain"],
-        use_acc=False
-    )
     # Initialize the input data
     input_data = init_input_data(
         sample=cfg["sample"]
@@ -99,9 +93,6 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
     # Initialize the label function by binding the sample data
     label_fn = init_ground_truth_labels(
         ground_truth=cfg["ground_truth"], input_data=input_data, use_acc=cfg["use_acceleration"]
-    )
-    label_fn_potential = init_ground_truth_labels(
-        ground_truth='polyhedral', input_data=input_data, use_acc=False
     )
 
     # When a new network is created: init empty training logs and loss trend indicators
@@ -113,11 +104,7 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
     # At the beginning (first plots) we assume no learned c
     c = 1.
     for it in t:
-        if it % 100 == 0:
-            plot_grid_2d(
-                label_fn_potential, prediction_fn_potential,
-                ("polyhedral", "model"), "Potential Plot", run_folder, it
-            )
+        if it % 500 == 0:
             plot_model_rejection(
                 model, encoding=cfg["encoding"],
                 views_2d=True, bw=True, N=cfg["plotting_points"], alpha=0.1, s=50, c=c,
@@ -185,6 +172,7 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
 
     # store run config
     cfg_dict = {"Sample": cfg["sample"],
+                "Seed": cfg["seed"],
                 "Type": "ACC" if cfg["use_acceleration"] else "U",
                 "Model": cfg["model_type"],
                 "Loss": cfg["loss_fn"].__name__,
@@ -213,6 +201,7 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
     runtime = end_time - start_time
 
     result_dictionary = {"Sample": cfg["sample"],
+                         "Seed": cfg["seed"],
                          "Type": "ACC" if cfg["use_acceleration"] else "U",
                          "Model": cfg["model_type"],
                          "Loss": cfg["loss_fn"].__name__,

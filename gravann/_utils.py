@@ -1,9 +1,10 @@
-import torch
-import numpy as np
-import os
-import warnings
 import gc
+import os
 import pickle as pk
+import warnings
+
+import numpy as np
+import torch
 
 
 def print_torch_mem_footprint():
@@ -81,11 +82,14 @@ def enableCUDA(device=0):
             "Error enabling CUDA. cuda.is_available() returned False. CPU will be used.")
 
 
-def fixRandomSeeds():
+def fixRandomSeeds(seed: int = 42):
     """This function sets the random seeds in torch and numpy to enable reproducible behavior.
+
+    Args:
+        seed (optional): the chosen seed, defaults to 42
     """
-    torch.manual_seed(42)
-    np.random.seed(42)
+    torch.manual_seed(seed)
+    np.random.seed(seed)
 
 
 def max_min_distance(points):

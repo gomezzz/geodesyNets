@@ -24,7 +24,7 @@ def init_environment(parameters: {str, any}) -> str:
     torch.cuda.empty_cache()
 
     # Fix the random seeds for this run
-    fixRandomSeeds()
+    fixRandomSeeds(parameters['seed'])
 
     domain = str(parameters['sample_domain']) \
         .replace('.', '_').replace('[', '').replace(']', '').replace(',', '').replace(' ', '=')
@@ -32,11 +32,11 @@ def init_environment(parameters: {str, any}) -> str:
     # Create folder for this specific run
     run_folder = (
         f"{parameters['output_folder']}/"
-        f"{parameters['ground_truth']}/"
         f"{parameters['sample']}/"
-        f"LR={parameters['learning_rate']}_loss={parameters['loss_fn'].__name__}_ENC={parameters['encoding'].name}_"
-        f"ACT={str(parameters['activation'])[:-2]}_"
-        f"BS={parameters['batch_size']}_layers={parameters['hidden_layers']}_neurons={parameters['n_neurons']}_"
+        f"{parameters['ground_truth']}/"
+        f"SEED={parameters['seed']}_LR={parameters['learning_rate']}_LOSS={parameters['loss_fn'].__name__}_"
+        f"ENC={parameters['encoding'].name}_ACT={str(parameters['activation'])[:-2]}_"
+        f"BS={parameters['batch_size']}_LAYERS={parameters['hidden_layers']}_NEURONS={parameters['n_neurons']}_"
         f"METHOD={parameters['sample_method']}_DOMAIN={domain}/"
     )
     pathlib.Path(run_folder).mkdir(parents=True, exist_ok=True)
