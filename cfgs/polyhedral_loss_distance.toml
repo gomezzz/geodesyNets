@@ -2,7 +2,7 @@ name = "polyhedral-distance-multi-seed"
 cuda_devices = "0"
 plotting_points = 2500
 seed = [
-    37, 42, 99
+    37, 42
 ]
 ground_truth = [
     "polyhedral",
