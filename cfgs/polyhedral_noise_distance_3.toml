@@ -1,5 +1,5 @@
 name = "polyhedral-noise-seed-42"
-cuda_devices = "1"
+cuda_devices = "2"
 plotting_points = 2500
 seed = [
     1999
