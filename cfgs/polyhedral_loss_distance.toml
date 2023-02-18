@@ -1,8 +1,8 @@
-name = "polyhedral-distance-multi-seed"
-cuda_devices = "0"
+name = "polyhedral-distance-1999-seed"
+cuda_devices = "3"
 plotting_points = 2500
 seed = [
-    37, 42
+    1999
 ]
 ground_truth = [
     "polyhedral",
