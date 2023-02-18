@@ -1,0 +1,71 @@
+name = "polyhedral-noise-seed-42"
+cuda_devices = "1"
+plotting_points = 2500
+seed = [
+    42
+]
+ground_truth = [
+    "polyhedral",
+    "mascon"
+]
+samples = [
+    "churyumov-gerasimenko"
+]
+noise_method = [
+    "gaussian",
+    "constant_bias"
+]
+[noise_params]
+mean = 0.0
+std = 1.0
+bias = [1.0, 0.0, 0.0]
+[model]
+activation = [
+    "Abs"
+]
+encoding = [
+    "direct_encoding"
+]
+use_acceleration = true
+type = "siren"
+hidden_layers = [
+    9
+]
+n_neurons = [
+    100
+]
+
+[siren]
+omega = [
+    30.0
+]
+
+[integration]
+points = 300000
+limit_domain = false
+domain = [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]]
+
+[training]
+iterations = 10000
+batch_size = [
+    1000
+]
+learning_rate = [
+    1e-4
+]
+loss = [
+    "normalized_L1_loss"
+]
+validation_points = 1000
+validation_ground_truth = "polyhedral"
+validation_sampling_altitudes = [1e-3, 0.05, 1.0, 2.0]
+
+[target_sampling]
+method = [
+    "spherical"
+]
+domain = [
+    [0.0, 1.0],
+    [1.0, 3.0],
+    [3.0, 5.0]
+]
