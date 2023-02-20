@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 
-def get_run_folder(cfg: dict, create_folder: bool) -> str:
+def get_run_folder(cfg: dict, create_folder: bool = False) -> str:
     """Returns a run folder path as string for a given configuration.
     Args:
         cfg: dictionary with the configuration
