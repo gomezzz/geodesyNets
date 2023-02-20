@@ -63,5 +63,7 @@ def constant_bias(
         function taking an input tensor and evaluating labels + adding noise on the results
 
     """
+    if not torch.is_tensor(bias):
+        bias = torch.Tensor(bias)
     return lambda points_tensor: \
         label_fn(points_tensor) + bias

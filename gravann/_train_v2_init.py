@@ -1,6 +1,6 @@
-import pathlib
 from typing import Callable, Union
 
+from gravann.io import get_run_folder, init_cuda_environment
 from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L, calculate_density
 from . import load_polyhedral_mesh, load_mascon_data
 from ._encodings import *
@@ -9,10 +9,10 @@ from ._mascon_labels import ACC_L as MASCON_ACC_L, U_L as MASCON_U_L
 from ._noise import get_noise_fn
 from ._sample_observation_points import get_target_point_sampler
 from ._train import init_network
-from ._utils import fixRandomSeeds, EarlyStopping
+from ._utils import EarlyStopping
 
 
-def init_environment(parameters: {str, any}) -> str:
+def init_environment(parameters: dict) -> str:
     """Creates the environment (the run-folder) for the given training with parameters
 
     Args:
@@ -22,27 +22,8 @@ def init_environment(parameters: {str, any}) -> str:
         the run folder
 
     """
-    # Clear GPU memory
-    torch.cuda.empty_cache()
-
-    # Fix the random seeds for this run
-    fixRandomSeeds(parameters['seed'])
-
-    domain = str(parameters['sample_domain']) \
-        .replace('.', '_').replace('[', '').replace(']', '').replace(',', '').replace(' ', '=')
-
-    # Create folder for this specific run
-    run_folder = (
-        f"{parameters['output_folder']}/"
-        f"{parameters['sample']}/"
-        f"{parameters['ground_truth']}/"
-        f"SEED={parameters['seed']}_LR={parameters['learning_rate']}_LOSS={parameters['loss_fn'].__name__}_"
-        f"ENC={parameters['encoding'].name}_ACT={str(parameters['activation'])[:-2]}_"
-        f"BS={parameters['batch_size']}_LAYERS={parameters['hidden_layers']}_NEURONS={parameters['n_neurons']}_"
-        f"METHOD={parameters['sample_method']}_DOMAIN={domain}_NOISE={parameters['noise_method']}/"
-    )
-    pathlib.Path(run_folder).mkdir(parents=True, exist_ok=True)
-    return run_folder
+    init_cuda_environment(parameters)
+    return get_run_folder(parameters, create_folder=True)
 
 
 def init_model_and_optimizer(run_folder: str, encoding: any, n_neurons: int, activation: any, model_type: str,
