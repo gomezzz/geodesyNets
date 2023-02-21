@@ -1,6 +1,6 @@
 from typing import Callable, Union
 
-from gravann.io import get_run_folder, init_cuda_environment
+from gravann.io import environment_initializer
 from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L, calculate_density
 from . import load_polyhedral_mesh, load_mascon_data
 from ._encodings import *
@@ -22,8 +22,8 @@ def init_environment(parameters: dict) -> str:
         the run folder
 
     """
-    init_cuda_environment(parameters)
-    return get_run_folder(parameters, create_folder=True)
+    environment_initializer.init_cuda_environment(parameters)
+    return environment_initializer.get_run_folder(parameters, create_folder=True)
 
 
 def init_model_and_optimizer(run_folder: str, encoding: any, n_neurons: int, activation: any, model_type: str,
