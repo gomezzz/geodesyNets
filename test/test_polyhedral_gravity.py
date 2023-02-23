@@ -2,12 +2,13 @@ import itertools
 
 import pytest
 import torch
+from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L
 from polyhedral_gravity.utility import check_mesh
 
-from gravann import ACC_L as MASCON_ACC_L, U_L as MASCON_U_L, load_mascon_data, load_polyhedral_mesh, \
+from gravann import acceleration_mascon_differential as MASCON_ACC_L, potential_mascon as MASCON_U_L, load_mascon_data, \
+    load_polyhedral_mesh, \
     get_target_point_sampler
-from gravann._losses import relRMSE
-from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L
+from gravann.training._losses import relRMSE
 
 # ====================== TEST PARAMETERS ======================
 # The tested bodies
