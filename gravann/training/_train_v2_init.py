@@ -4,12 +4,12 @@ from gravann._train import init_network
 from gravann.functions._integration import ACC_trap, U_trap_opt
 from gravann.labels._mascon_labels import acceleration_mascon_differential as MASCON_ACC_L, \
     potential_mascon as MASCON_U_L
+from gravann.network._encodings import *
 from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L, calculate_density
 from gravann.util._noise import get_noise_fn
 
 from gravann import load_polyhedral_mesh, load_mascon_data
-from gravann.input import environment_initializer
-from gravann.network._encodings import *
+from gravann.training import environment_initializer
 from gravann.util._sample_observation_points import get_target_point_sampler
 from gravann.util._utils import EarlyStopping
 

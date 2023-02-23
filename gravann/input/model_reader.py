@@ -2,9 +2,9 @@ import os
 import pickle
 
 import torch
+from gravann.network._abs_layer import AbsLayer
 
 from gravann import init_network, direct_encoding
-from gravann.network._abs_layer import AbsLayer
 
 
 def read_data(root_directory) -> list:

@@ -1,82 +1,8 @@
-import pickle as pk
-
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from matplotlib import pyplot as plt
 
-from gravann.output._plots import plot_model_vs_mascon_contours, plot_model_rejection, plot_model_vs_mascon_rejection
-
-
-def load_sample(sample, use_differential=False):
-    """Loads the mascon model of the sample
-
-    Args:
-        sample (str): Sample to load
-
-    Returns:
-        torch tensors: points and masses of the sample
-    """
-
-    with open("mascons/" + sample, "rb") as file:
-        mascon_points, mascon_masses_u, name = pk.load(file)
-
-    mascon_points = torch.tensor(mascon_points)
-    mascon_masses_u = torch.tensor(mascon_masses_u)
-
-    if use_differential:
-        try:
-            with open("mascons/" + sample[:-3] + "_nu.pk", "rb") as file:
-                _, mascon_masses_nu, _ = pk.load(file)
-            mascon_masses_nu = torch.tensor(mascon_masses_nu)
-            print("Loaded non-uniform model")
-        except:
-            mascon_masses_nu = None
-    else:
-        mascon_masses_nu = None
-
-    # If we are on the GPU , make sure these are on the GPU. Some mascons were stored as tensors on the CPU. it is weird.
-    if torch.cuda.is_available():
-        mascon_points = mascon_points.cuda()
-        mascon_masses_u = mascon_masses_u.cuda()
-        if mascon_masses_nu is not None:
-            mascon_masses_nu = mascon_masses_nu.cuda()
-
-    print("Name: ", name)
-    print("Number of mascon_points: ", len(mascon_points))
-    print("Total mass: ", sum(mascon_masses_u).item())
-    return mascon_points, mascon_masses_u, mascon_masses_nu
-
-
-def load_polyhedral_mesh(sample: str) -> (np.ndarray, np.ndarray):
-    """Loads a polyhedral mesh for a given sample from the '3dmeshes' folder.
-
-    Args:
-        sample: the name of file/ sample
-
-    Returns:
-        tuple of vertices (N, 3), triangles (M, 3)
-
-    """
-    with open(f"./3dmeshes/{sample}.pk", "rb") as f:
-        vertices, triangles = pk.load(f)
-        return np.array(vertices), np.array(triangles)
-
-
-def load_mascon_data(sample: str) -> (torch.Tensor, torch.Tensor):
-    """Loads the mascon points and mascon masses for a given sample from the 'mascons' folder
-
-    Args:
-        sample: the name of the file/ sample
-
-    Returns:
-        tuple of mascon_points (N, 3), mascon_masses (N)
-
-    """
-    with open(f"./mascons/{sample}.pk", "rb") as file:
-        mascon_points, mascon_masses_u, name = pk.load(file)
-        mascon_points = torch.tensor(mascon_points)
-        mascon_masses_u = torch.tensor(mascon_masses_u)
-        return mascon_points, mascon_masses_u
+from gravann import plot_model_rejection, plot_model_vs_mascon_rejection, plot_model_vs_mascon_contours
 
 
 def save_results(loss_log, weighted_average_log, validation_results, model, folder):

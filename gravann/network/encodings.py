@@ -10,6 +10,7 @@ class directional_encoding:
     def __init__(self):
         self.dim = 4
         self.name = "directional_encoding"
+
     # sp: sampled points
 
     def __call__(self, sp):
@@ -27,11 +28,10 @@ class positional_encoding:
         self.name = "positional_encoding_" + str(N)
 
     def __call__(self, sp):
-        retval = torch.cat((torch.sin(np.pi * sp).view(-1, 3),
-                            torch.cos(np.pi * sp).view(-1, 3)), dim=1)
+        retval = torch.cat((torch.sin(np.pi * sp).view(-1, 3), torch.cos(np.pi * sp).view(-1, 3)), dim=1)
         for i in range(1, self.dim // 6):
-            retval = torch.cat((retval, torch.sin(
-                2**i*np.pi * sp).view(-1, 3), torch.cos(2**i*np.pi * sp).view(-1, 3)), dim=1)
+            retval = torch.cat(
+                (retval, torch.sin(2 ** i * np.pi * sp).view(-1, 3), torch.cos(2 ** i * np.pi * sp).view(-1, 3)), dim=1)
         return retval
 
 

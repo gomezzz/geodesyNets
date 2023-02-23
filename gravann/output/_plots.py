@@ -6,19 +6,15 @@ import numpy as np
 import pyvista as pv
 import pyvistaqt as pvqt
 import torch
-from gravann.functions._integration import ACC_trap, U_trap_opt
-from gravann.labels._mascon_labels import acceleration_mascon_differential
 from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
 from scipy.spatial.transform import Rotation as rotation
 from tqdm import tqdm
 
-from gravann.util._hulls import is_outside_torch, is_outside
-from gravann.util._mesh_conversion import create_mesh_from_cloud, create_mesh_from_model
-from gravann.util._sample_observation_points import get_target_point_sampler
-from gravann.util._utils import unpack_triangle_mesh
-
-pv.set_plot_theme("dark")
+from gravann.functions import integration
+from gravann.labels import mascon
+from gravann.util import is_outside_torch, is_outside, create_mesh_from_cloud, create_mesh_from_model, \
+    get_target_point_sampler, unpack_triangle_mesh
 
 
 def plot_model_vs_cloud_mesh(model, gt_mesh, encoding, save_path=None):
@@ -852,20 +848,21 @@ def plot_model_mascon_acceleration(sample, model, encoding, mascon_points, masco
     # Compute accelerations in left points, then right points
     # for both network and mascon model
     batch_size = 100
-    label_function = acceleration_mascon_differential
-    integrator = ACC_trap
+    label_function = mascon.acceleration_differential
+    integrator = integration.acceleration_trapezoid
 
-    def prediction_adjustment(tp, mp, mm): return integrator(
-        tp, model, encoding, N=200000)*c
+    def prediction_adjustment(tp, mp, mm):
+        return integrator(
+            tp, model, encoding, N=200000) * c
 
     if differential:
         # Labels for differential need to be computed on non-uniform ground truth
-        def label_function(tp, mp, mm): return acceleration_mascon_differential(tp, mp, mascon_masses_nu)
+        def label_function(tp, mp, mm): return mascon.acceleration_differential(tp, mp, mascon_masses_nu)
 
         # Predictions for differential need to be adjusted with acceleration from uniform ground truth
 
         def prediction_adjustment(
-                tp, mp, mm): return acceleration_mascon_differential(tp, mp, mm) + c * integrator(tp, model, encoding,
+                tp, mp, mm): return mascon.acceleration_differential(tp, mp, mm) + c * integrator(tp, model, encoding,
                                                                                                   N=200000)
 
     for idx in range((len(points_left) // batch_size)+1):
@@ -1110,8 +1107,10 @@ def plot_potential_contours(model, encoding, mascon_points, N=100, save_path=Non
     p[:, 2] = zeros
     # ... and compute them
     target_points = encoding(torch.tensor(p, dtype=torch.float32))
-    potential = U_trap_opt(target_points, model, encoding=encoding, N=integration_points,
-                           verbose=False, noise=1e-5, sample_points=None, h=None, domain=None)
+    potential = integration.potential_trapezoid(
+        target_points, model, encoding=encoding, N=integration_points, verbose=False, noise=1e-5,
+        sample_points=None, h=None, domain=None
+    )
     Z = potential.reshape((N, N)).cpu().detach().numpy()
     X, Y = np.meshgrid(np.linspace(
         domain[0], domain[1], N), np.linspace(domain[0], domain[1], N))
@@ -1135,8 +1134,8 @@ def plot_potential_contours(model, encoding, mascon_points, N=100, save_path=Non
     p[:, 2] = e2
     # ... and compute them
     target_points = encoding(torch.tensor(p, dtype=torch.float32))
-    potential = U_trap_opt(target_points, model, encoding=encoding, N=integration_points,
-                           verbose=False, noise=1e-5, sample_points=None, h=None, domain=None)
+    potential = integration.potential_trapezoid(target_points, model, encoding=encoding, N=integration_points,
+                                                verbose=False, noise=1e-5, sample_points=None, h=None, domain=None)
     Z = potential.reshape((N, N)).cpu().detach().numpy()
     X, Y = np.meshgrid(np.linspace(
         domain[0], domain[1], N), np.linspace(domain[0], domain[1], N))
@@ -1160,8 +1159,8 @@ def plot_potential_contours(model, encoding, mascon_points, N=100, save_path=Non
     p[:, 2] = e2
     # ... and compute them
     target_points = encoding(torch.tensor(p, dtype=torch.float32))
-    potential = U_trap_opt(target_points, model, encoding=encoding, N=integration_points,
-                           verbose=False, noise=1e-5, sample_points=None, h=None, domain=None)
+    potential = integration.potential_trapezoid(target_points, model, encoding=encoding, N=integration_points,
+                                                verbose=False, noise=1e-5, sample_points=None, h=None, domain=None)
     Z = potential.reshape((N, N)).cpu().detach().numpy()
     X, Y = np.meshgrid(np.linspace(
         domain[0], domain[1], N), np.linspace(domain[0], domain[1], N))

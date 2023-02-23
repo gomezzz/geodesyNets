@@ -5,7 +5,7 @@ import numpy as np
 import sobol_seq
 import torch
 
-from gravann.network._encodings import direct_encoding
+from gravann.network.encodings import direct_encoding
 
 
 def compute_sobol_points(N=3, M=500000):
@@ -207,12 +207,10 @@ def acceleration_monte_carlo_ld(target_points, model, encoding=direct_encoding()
         domain (torch.tensor): integration domain [3,2] , pass None for [-1,1]^3. Currently Not Implemented!
     """
     if domain is not None:
-        raise NotImplementedError(
-            "Custom domain is not yet implemented for ACC_ld.")
+        raise NotImplementedError("Custom domain is not yet implemented for ACC_ld.")
 
     # init result vector
-    retval = torch.empty(len(target_points), 3,
-                         device=os.environ["TORCH_DEVICE"])
+    retval = torch.empty(len(target_points), 3, device=os.environ["TORCH_DEVICE"])
 
     # We check that there are enough sobol points in the global variable
     if N > np.shape(sobol_points)[0]:
@@ -233,8 +231,7 @@ def acceleration_monte_carlo_ld(target_points, model, encoding=direct_encoding()
     # the mc integral in the hypercube [-1,1]^3 (volume is 8) for each of the target points
     for i, target_point in enumerate(target_points):
         dr = torch.sub(target_point, sample_points)
-        retval[i] = torch.sum(
-            rho / torch.pow(torch.norm(dr, dim=1), 3).view(-1, 1) * dr, dim=0) / N
+        retval[i] = torch.sum(rho / torch.pow(torch.norm(dr, dim=1), 3).view(-1, 1) * dr, dim=0) / N
     return - 8 * retval
 
 

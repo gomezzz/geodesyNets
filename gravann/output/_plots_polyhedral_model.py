@@ -1,16 +1,12 @@
 import matplotlib.colors as colors
 import numpy as np
-import pyvista as pv
 import torch
-from gravann.labels._mascon_labels import acceleration_mascon_differential as MASCON_ACC_L
-from gravann.labels._polyhedral_labels import acceleration_polyhedral as POLYHEDRAL_ACC_L
 from matplotlib import pyplot as plt
 
-from gravann import ACC_trap
-from gravann.input._io import load_polyhedral_mesh, load_mascon_data
-from gravann.util._sample_observation_points import get_target_point_sampler
-
-pv.set_plot_theme("dark")
+from gravann.functions import integration
+from gravann.input.sample_reader import load_polyhedral_mesh, load_mascon_data
+from gravann.labels import mascon, polyhedral
+from gravann.util import get_target_point_sampler
 
 
 def plot_compare_acceleration(sample: str, compare_mode: (str, str), **kwargs):
@@ -46,15 +42,15 @@ def plot_compare_acceleration(sample: str, compare_mode: (str, str), **kwargs):
     model1, encoding1, c1 = kwargs.get('model_1', (None, None, 1))
     model2, encoding2, c2 = kwargs.get('model_2', (None, None, 1))
 
-    integrator = ACC_trap
+    integrator = integration.acceleration_trapezoid
     label_dict1 = {
-        'mascon': lambda points: MASCON_ACC_L(points, mascon_points, mascon_masses),
-        'polyhedral': lambda points: POLYHEDRAL_ACC_L(points, mesh_vertices, mesh_triangles),
+        'mascon': lambda points: mascon.acceleration(points, mascon_points, mascon_masses),
+        'polyhedral': lambda points: polyhedral.acceleration(points, mesh_vertices, mesh_triangles),
         'model': lambda points: integrator(points, model1, encoding1, N=200000) * c1,
     }
     label_dict2 = {
-        'mascon': lambda points: MASCON_ACC_L(points, mascon_points, mascon_masses),
-        'polyhedral': lambda points: POLYHEDRAL_ACC_L(points, mesh_vertices, mesh_triangles),
+        'mascon': lambda points: mascon.acceleration(points, mascon_points, mascon_masses),
+        'polyhedral': lambda points: polyhedral.acceleration(points, mesh_vertices, mesh_triangles),
         'model': lambda points: integrator(points, model2, encoding2, N=200000) * c2
     }
     l1, l2 = compare_mode
