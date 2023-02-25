@@ -7,14 +7,17 @@ import pandas as pd
 import toml
 import torch
 
-import gravann
+from gravann.util import get_asteroid_bounding_box, enableCUDA
+from gravann.training import trainer, losses
+from gravann.network import encodings, layers
+from gravann.functions.integration import acceleration_trapezoid, potential_trapezoid
 
 
 def run(cfg: dict, results_df: pd.DataFrame) -> None:
     """This function runs all the permutations of above settings
     """
     print("Using the following samples:", cfg["samples"])
-    gravann.enableCUDA()
+    enableCUDA()
     print("Will use device ", os.environ["TORCH_DEVICE"])
 
     iterable_parameters = [
@@ -41,7 +44,7 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
     for sample in cfg["samples"]:
         print(f"###### - SAMPLE START {sample}")
         if cfg["integration"]["limit_domain"]:
-            cfg["integration"]["domain"] = gravann.get_asteroid_bounding_box(asteroid_pk_path=f"3dmeshes/{sample}.pk")
+            cfg["integration"]["domain"] = get_asteroid_bounding_box(asteroid_pk_path=f"3dmeshes/{sample}.pk")
         for (
                 seed, ground_truth, noise_method,
                 loss, batch_size, learning_rate,
@@ -50,7 +53,7 @@ def run(cfg: dict, results_df: pd.DataFrame) -> None:
                 sample_method, sample_domain,
         ) in itertools.product(*iterable_parameters):
             print("######## - SINGLE RUN START")
-            run_results = gravann.run_training_v2({
+            run_results = trainer.run_training_configuration({
                 ########################################################################################################
                 # Name of the sample and other administrative stuff like the chosen seed
                 ########################################################################################################
@@ -122,10 +125,10 @@ def _init_env(cfg: dict) -> (dict, pd.DataFrame):
 
     # Select integrator and prepare folder path
     if cfg["model"]["use_acceleration"]:
-        cfg["integrator"] = gravann.ACC_trap
+        cfg["integrator"] = acceleration_trapezoid
         cfg["name"] = cfg["name"] + "_" + "ACC"
     else:
-        cfg["integrator"] = gravann.U_trap_opt
+        cfg["integrator"] = potential_trapezoid
         cfg["name"] = cfg["name"] + "_" + "U"
 
     cfg["name"] = cfg["name"] + "_" + cfg["model"]["type"]
@@ -145,22 +148,22 @@ def _init_env(cfg: dict) -> (dict, pd.DataFrame):
 
 
 def _cfg_to_func(cfg: dict) -> dict:
-    losses, encodings, activations = [], [], []
+    losses_list, encodings_list, activations = [], [], []
 
     for loss in cfg["training"]["loss"]:
-        losses.append(getattr(gravann, loss))
+        losses_list.append(getattr(losses, loss))
 
     for encoding in cfg["model"]["encoding"]:
-        encodings.append(getattr(gravann, encoding)())
+        encodings_list.append(getattr(encodings, encoding)())
 
     for activation in cfg["model"]["activation"]:
         if activation == "Abs":
-            activations.append(gravann.AbsLayer())
+            activations.append(layers.AbsLayer())
         else:
             activations.append(getattr(torch.nn, activation)())
 
-    cfg["training"]["loss"] = losses
-    cfg["model"]["encoding"] = encodings
+    cfg["training"]["loss"] = losses_list
+    cfg["model"]["encoding"] = encodings_list
     cfg["model"]["activation"] = activations
     return cfg
 
