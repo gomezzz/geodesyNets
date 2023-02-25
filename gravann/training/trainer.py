@@ -13,40 +13,7 @@ from . import training_initializer, validator
 from .losses import *
 
 
-def train_on_batch_v2(points, prediction_fn, labels, loss_fn, optimizer, scheduler):
-    """Trains the passed model on the passed batch
-
-    Args:
-        points (tensor): target points for training
-        prediction_fn (func): prediction func of the model
-        labels (tensor): labels at the target points
-        loss_fn (func): loss function for training
-        optimizer (torch optimizer): torch optimizer to use
-        scheduler (torch LR scheduler): torch LR scheduler to use
-
-    Returns:
-        torch tensor: losses
-    """
-    predicted = prediction_fn(points)
-    c = torch.sum(predicted * labels) / torch.sum(predicted * predicted)
-
-    if loss_fn in [contrastive_loss, normalized_relative_L2_loss, normalized_relative_component_loss]:
-        loss = loss_fn(predicted, labels)
-    else:
-        loss = loss_fn(predicted.view(-1), labels.view(-1))
-
-    optimizer.zero_grad()
-
-    loss.backward()
-
-    optimizer.step()
-
-    scheduler.step(loss.item())
-
-    return loss, c
-
-
-def run_training_v2(cfg: dict) -> pd.DataFrame:
+def run_training_configuration(cfg: dict) -> pd.DataFrame:
     """Runs a specific parameter configuration.
 
     Args:
@@ -117,10 +84,7 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
             labels = label_fn(target_points)
 
         # Train
-        loss, c = train_on_batch_v2(
-            target_points, prediction_fn, labels,
-            cfg["loss_fn"], optimizer, scheduler
-        )
+        loss, c = _train_on_batch_v2(target_points, prediction_fn, labels, cfg["loss_fn"], optimizer, scheduler)
 
         # Update the loss trend indicators
         weighted_average.append(loss.item())
@@ -151,15 +115,8 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
         "sampling_altitudes": cfg["validation_sampling_altitudes"]
     }
     validation_kwargs.update(input_data)
-    validation_results = validator.validation_v2(
-        model,
-        cfg["encoding"],
-        cfg["sample"],
-        cfg["validation_ground_truth"],
-        cfg.get("use_acceleration", True),
-        500000,
-        **validation_kwargs
-    )
+    validation_results = validator.validate(model, cfg["encoding"], cfg["sample"], cfg["validation_ground_truth"],
+                                            cfg.get("use_acceleration", True), 500000, **validation_kwargs)
 
     print("Saving...")
     plot_saver.save_results(loss_log, weighted_average_log, validation_results, model, run_folder)
@@ -222,3 +179,36 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
                          "Final WeightedAvg Loss": weighted_average_log[-1]}
     results_df = pd.concat([pd.DataFrame([result_dictionary]), val_res], axis=1)
     return results_df
+
+
+def _train_on_batch_v2(points, prediction_fn, labels, loss_fn, optimizer, scheduler):
+    """Trains the passed model on the passed batch
+
+    Args:
+        points (tensor): target points for training
+        prediction_fn (func): prediction func of the model
+        labels (tensor): labels at the target points
+        loss_fn (func): loss function for training
+        optimizer (torch optimizer): torch optimizer to use
+        scheduler (torch LR scheduler): torch LR scheduler to use
+
+    Returns:
+        torch tensor: losses
+    """
+    predicted = prediction_fn(points)
+    c = torch.sum(predicted * labels) / torch.sum(predicted * predicted)
+
+    if loss_fn in [contrastive_loss, normalized_relative_L2_loss, normalized_relative_component_loss]:
+        loss = loss_fn(predicted, labels)
+    else:
+        loss = loss_fn(predicted.view(-1), labels.view(-1))
+
+    optimizer.zero_grad()
+
+    loss.backward()
+
+    optimizer.step()
+
+    scheduler.step(loss.item())
+
+    return loss, c

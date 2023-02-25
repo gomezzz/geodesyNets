@@ -12,7 +12,7 @@ from .losses import contrastive_loss, normalized_L1_loss, normalized_relative_L2
     normalized_relative_component_loss, RMSE, relRMSE
 
 
-def validation_v2(model, encoding, sample, ground_truth, use_acc=True, N_integration=500000, **kwargs):
+def validate(model, encoding, sample, ground_truth, use_acc=True, N_integration=500000, **kwargs):
     """Convenience function to compute the different loss values for the passed model and asteroid with high precision
 
     Args:
