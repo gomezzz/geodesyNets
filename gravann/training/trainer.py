@@ -7,8 +7,9 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from gravann.output import plot_model_rejection
-from gravann.output import plot_saver
+from gravann.functions import binder as function_binder
+from gravann.labels import binder as label_binder
+from gravann.output import plot_model_rejection, plot_saver
 from . import training_initializer, validator
 from .losses import *
 
@@ -44,22 +45,25 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
         sample_domain=cfg["sample_domain"], batch_size=cfg["batch_size"]
     )
     # Initialize the prediction function by binding the model and defined configuration parameters
-    prediction_fn = training_initializer.init_prediction_label(
-        model=model, encoding=cfg["encoding"],
-        integration_points=cfg["integration_points"], integration_domain=cfg["integration_domain"],
-        use_acc=cfg["use_acceleration"]
-    )
-    # Initialize the input data
-    input_data = training_initializer.init_input_data(
-        sample=cfg["sample"]
+    prediction_fn = function_binder.bind_integration(
+        method='trapezoid',
+        use_acc=cfg["use_acceleration"],
+        model=model,
+        encoding=cfg["encoding"],
+        integration_points=cfg["integration_points"],
+        integration_domain=cfg["integration_domain"],
     )
     # Initialize the label function by binding the sample data
-    label_fn = training_initializer.init_ground_truth_labels(
-        ground_truth=cfg["ground_truth"], input_data=input_data, use_acc=cfg["use_acceleration"]
+    label_fn = label_binder.bind_label(
+        method=cfg["ground_truth"],
+        use_acc=cfg["use_acceleration"],
+        sample=cfg["sample"]
     )
     # Add noise on top (if defined)
-    label_fn = training_initializer.init_noise(
-        label_fn, cfg["noise_method"], cfg["noise_params"]
+    label_fn = function_binder.bind_noise(
+        method=cfg["noise_method"],
+        label_fn=label_fn,
+        kwargs=cfg["noise_params"]
     )
 
     # When a new network is created: init empty training logs and loss trend indicators
@@ -84,7 +88,7 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
             labels = label_fn(target_points)
 
         # Train
-        loss, c = _train_on_batch_v2(target_points, prediction_fn, labels, cfg["loss_fn"], optimizer, scheduler)
+        loss, c = _train_on_batch(target_points, prediction_fn, labels, cfg["loss_fn"], optimizer, scheduler)
 
         # Update the loss trend indicators
         weighted_average.append(loss.item())
@@ -112,11 +116,17 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
     validation_kwargs = {
         "N": cfg["validation_points"],
         "progressbar": False,
-        "sampling_altitudes": cfg["validation_sampling_altitudes"]
+        "sampling_altitudes": cfg["validation_sampling_altitudes"],
+        "integration_points": 50000
     }
-    validation_kwargs.update(input_data)
-    validation_results = validator.validate(model, cfg["encoding"], cfg["sample"], cfg["validation_ground_truth"],
-                                            cfg.get("use_acceleration", True), 500000, **validation_kwargs)
+    validation_results = validator.validate(
+        model,
+        cfg["encoding"],
+        cfg["sample"],
+        cfg["validation_ground_truth"],
+        cfg.get("use_acceleration", True),
+        **validation_kwargs
+    )
 
     print("Saving...")
     plot_saver.save_results(loss_log, weighted_average_log, validation_results, model, run_folder)
@@ -181,7 +191,7 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
     return results_df
 
 
-def _train_on_batch_v2(points, prediction_fn, labels, loss_fn, optimizer, scheduler):
+def _train_on_batch(points, prediction_fn, labels, loss_fn, optimizer, scheduler):
     """Trains the passed model on the passed batch
 
     Args:

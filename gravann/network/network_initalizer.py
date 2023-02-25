@@ -1,6 +1,7 @@
 from torch import nn
 
-from gravann.network import NERF, Siren
+from ._nerf import NERF
+from ._siren import Siren
 
 
 def init_network(encoding, n_neurons=100, activation=nn.Sigmoid(), model_type="default", siren_omega=30.,

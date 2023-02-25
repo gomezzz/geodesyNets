@@ -3,7 +3,8 @@ from typing import Callable
 import torch
 
 from gravann.input import sample_reader
-from . import mascon, polyhedral, calculate_density
+from . import mascon, polyhedral
+from ._polyhedral_utils import calculate_density
 
 _METHOD_REGISTRY = {
     ("mascon", True): mascon.acceleration,
@@ -30,6 +31,7 @@ def bind_label(method: str, use_acc: bool = True, **kwargs) -> Callable[[torch.T
         mesh_faces (2-D array-like): a (N,) array-like object containing the edges of the polyhedron
 
     Returns:
+        callable function taking an input tensor of points and returning the corresponding label's values
 
     """
     sample = kwargs.get("sample", None)
@@ -39,13 +41,13 @@ def bind_label(method: str, use_acc: bool = True, **kwargs) -> Callable[[torch.T
         else:
             mascon_points, mascon_masses, mascon_masses_nu = kwargs.get("mascon_points", None), kwargs.get(
                 "mascon_masses", None), kwargs.get("mascon_masses_nu", None)
-        return lambda x: _METHOD_REGISTRY[(method, use_acc)](x, mascon_points, mascon_masses)
+        return lambda points: _METHOD_REGISTRY[(method, use_acc)](points, mascon_points, mascon_masses)
     elif method == 'polyhedral':
         if sample is not None:
             mesh_vertices, mesh_faces = sample_reader.load_polyhedral_mesh(sample)
         else:
             mesh_vertices, mesh_faces = kwargs.get("mesh_vertices", None), kwargs.get("mesh_faces", None)
         density = calculate_density(mesh_vertices, mesh_faces)
-        return lambda x: _METHOD_REGISTRY[(method, use_acc)](x, mesh_vertices, mesh_faces, density)
+        return lambda points: _METHOD_REGISTRY[(method, use_acc)](points, mesh_vertices, mesh_faces, density)
     else:
         raise NotImplemented(f"The method {method} is not implemented!")

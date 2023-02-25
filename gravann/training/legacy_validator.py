@@ -3,12 +3,12 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from gravann import compute_c_for_model
 from gravann.functions import integration
 from gravann.labels import mascon
 from gravann.util import fixRandomSeeds
 from gravann.util import get_target_point_sampler
-from losses import contrastive_loss, normalized_L1_loss, normalized_relative_L2_loss, \
+from .kappa import compute_c_for_model
+from .losses import contrastive_loss, normalized_L1_loss, normalized_relative_L2_loss, \
     normalized_relative_component_loss, RMSE, relRMSE
 
 

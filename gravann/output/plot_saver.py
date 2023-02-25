@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from matplotlib import pyplot as plt
 
-from . import plot_model_rejection, plot_model_vs_mascon_rejection, plot_model_vs_mascon_contours
+from ._plots import plot_model_rejection, plot_model_vs_mascon_rejection, plot_model_vs_mascon_contours
 
 
 def save_results(loss_log, weighted_average_log, validation_results, model, folder):

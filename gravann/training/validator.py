@@ -3,28 +3,27 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from gravann.functions import integration
-from gravann.labels import mascon, polyhedral, calculate_density
+from gravann.functions import binder as function_binder
+from gravann.labels import binder as label_binder
 from gravann.util import fixRandomSeeds
 from gravann.util import get_target_point_sampler
-from .kappa import compute_c_for_model
 from .losses import contrastive_loss, normalized_L1_loss, normalized_relative_L2_loss, \
     normalized_relative_component_loss, RMSE, relRMSE
 
 
-def validate(model, encoding, sample, ground_truth, use_acc=True, N_integration=500000, **kwargs):
+def validate(model, encoding, sample, ground_truth, use_acc=True, **kwargs):
     """Convenience function to compute the different loss values for the passed model and asteroid with high precision
 
     Args:
-        model (torch.nn): trained model
+        model: trained model
         encoding (encoding): encoding to use for the points
         sample (str): the name of the asteroid (also used as filepath)
         ground_truth (str): 'polyhedral' or 'mascon' or 'polyhedral-mascon' (polyhedral as groundtruth to mascon model)
         use_acc (bool, optional): if to use the acceleration labels instead of the potential
-        N_integration (int, optional): Number of integrations points to use. Defaults to 500000.
         **kwargs: see below
 
     Keyword Args:
+        integration_points (int, optional): Number of integrations points to use. Defaults to 500000.
         mascon_points (torch.tensor): asteroid mascon points
         mascon_masses (torch.tensor): asteroid mascon masses
         mascon_masses_nu (torch.tensor): non-uniform asteroid masses. Pass if using differential training
@@ -40,71 +39,9 @@ def validate(model, encoding, sample, ground_truth, use_acc=True, N_integration=
         pandas dataframe: Results as df
 
     """
-    if ground_truth == 'mascon':
-        label_function, prediction_function = _validation_mascon(model, encoding, use_acc, N_integration, **kwargs)
-        return _validation(label_function, prediction_function, sample, **kwargs)
-    elif ground_truth == 'polyhedral':
-        label_function, prediction_function = _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs)
-        return _validation(label_function, prediction_function, sample, **kwargs)
-    elif ground_truth == 'polyhedral-mascon':
-        # Model is not required and can be None in these cases
-        mascon_label, _ = _validation_mascon(model, encoding, use_acc, N_integration, **kwargs)
-        polyhedral_label, _ = _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs)
-        return _validation(polyhedral_label, mascon_label, sample, **kwargs)
-    else:
-        raise NotImplementedError(f"The method {ground_truth} is not implemented!")
-
-
-def _validation_mascon(model, encoding, use_acc, N_integration, **kwargs):
-    """Generates the label_function and the prediction function for the mascon model
-    """
-    mascon_points, mascon_masses, = kwargs['mascon_points'], kwargs['mascon_masses']
-    mascon_masses_nu = kwargs.get('mascon_masses_nu', None)
-    integration_grid, h, N_int = integration.compute_integration_grid(N_integration)
-
-    def prediction_adjustment(tp, mp, mm, x):
-        return x
-
-    if use_acc:
-        label_function = mascon.acceleration
-        integrator = integration.acceleration_trapezoid
-    else:
-        label_function = mascon.potential
-        integrator = integration.potential_trapezoid
-    if mascon_masses_nu is not None:
-        c = compute_c_for_model(model, encoding, mascon_points, mascon_masses, mascon_masses_nu, use_acc)
-
-        # Labels for differential need to be computed on non-uniform ground truth
-        def label_function(tp, mp, mm):
-            return mascon.acceleration(tp, mp, mascon_masses_nu)
-
-        # Predictions for differential need to be adjusted with acceleration from uniform ground truth
-        def prediction_adjustment(tp, mp, mm, x):
-            return mascon.acceleration(tp, mp, mm) + c * x
-    return (
-        lambda points: label_function(points, mascon_points, mascon_masses),
-        lambda points: prediction_adjustment(points, mascon_points, mascon_masses,
-                                             integrator(points, model, encoding, N=N_int,
-                                                        h=h, sample_points=integration_grid))
-    )
-
-
-def _validation_polyhedral(model, encoding, use_acc, N_integration, **kwargs):
-    """Generates the label_function and the prediction function for the polyhedral model
-    """
-    mesh_vertices, mesh_faces, = kwargs['mesh_vertices'], kwargs['mesh_faces']
-    density = calculate_density(mesh_vertices, mesh_faces)
-    integration_grid, h, N_int = integration.compute_integration_grid(N_integration)
-    if use_acc:
-        label_function = polyhedral.acceleration
-        integrator = integration.acceleration_trapezoid
-    else:
-        label_function = polyhedral.potential
-        integrator = integration.potential_trapezoid
-    return (
-        lambda points: label_function(points, mesh_vertices, mesh_faces, density),
-        lambda points: integrator(points, model, encoding, N=N_int, h=h, sample_points=integration_grid)
-    )
+    label_function = label_binder.bind_label(ground_truth, use_acc, **kwargs)
+    prediction_function = function_binder.bind_integration('trapezoid', use_acc, model, encoding, **kwargs)
+    return _validation(label_function, prediction_function, sample, **kwargs)
 
 
 def _validation(label_function, prediction_function, sample, **kwargs):

@@ -5,22 +5,20 @@ from collections import deque
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from gravann.input._io import load_sample, save_results, save_plots
-from gravann.labels._mascon_labels import acceleration_mascon_differential, \
-    potential_mascon
-# Required for loading runs
-from gravann.network._abs_layer import AbsLayer
-from gravann.network._encodings import *
-from gravann.training._losses import contrastive_loss, zero_L1_loss, normalized_relative_L2_loss, \
-    normalized_relative_component_loss
 from tqdm import tqdm
 
-from gravann.output._plots import plot_model_rejection, plot_model_vs_mascon_contours
-from gravann.util._sample_observation_points import get_target_point_sampler
-from gravann.util._utils import fixRandomSeeds, EarlyStopping
-from ._validation import validation
-from .. import validation_results_unpack_df
-from ..network.network_initalizer import init_network
+from gravann.input.sample_reader import load_sample
+from gravann.labels import mascon
+# Required for loading runs
+from gravann.network.encodings import *
+from gravann.network.layers import AbsLayer
+from gravann.network.network_initalizer import init_network
+from gravann.output import plot_model_rejection, plot_model_vs_mascon_contours
+from gravann.output.plot_saver import save_results, save_plots
+from gravann.util import get_target_point_sampler, fixRandomSeeds, EarlyStopping
+from .legacy_validator import validation
+from .losses import contrastive_loss, zero_L1_loss, normalized_relative_L2_loss, normalized_relative_component_loss
+from .validator import validation_results_unpack_df
 
 
 def train_on_batch(targets, labels, model, encoding, loss_fn, optimizer, scheduler, integrator, N, vision_targets=None,
@@ -46,7 +44,7 @@ def train_on_batch(targets, labels, model, encoding, loss_fn, optimizer, schedul
     # Compute the loss (use N=3000 to start with, then, eventually, beef it up to 200000)
     predicted = integrator(targets, model, encoding,
                            N=N, domain=integration_domain)
-    c = torch.sum(predicted*labels)/torch.sum(predicted*predicted)
+    c = torch.sum(predicted * labels) / torch.sum(predicted * predicted)
     if loss_fn == contrastive_loss or loss_fn == normalized_relative_L2_loss or loss_fn == normalized_relative_component_loss:
         loss = loss_fn(predicted, labels)
     else:
@@ -57,7 +55,7 @@ def train_on_batch(targets, labels, model, encoding, loss_fn, optimizer, schedul
     if vision_targets is not None:
         encoded_vision_targets = encoding(vision_targets)
         predictions_at_vision_targets = model(encoded_vision_targets)
-        vision_loss = torch.mean(zero_L1_loss(c*predictions_at_vision_targets))
+        vision_loss = torch.mean(zero_L1_loss(c * predictions_at_vision_targets))
         loss += vision_loss
 
     # Before the backward pass, use the optimizer object to zero all of the
@@ -81,7 +79,8 @@ def train_on_batch(targets, labels, model, encoding, loss_fn, optimizer, schedul
     return loss, c, vision_loss
 
 
-def _init_training_run(cfg, sample, lr, loss_fn, encoding, batch_size, target_sample_method, activation, omega, hidden_layers, n_neurons):
+def _init_training_run(cfg, sample, lr, loss_fn, encoding, batch_size, target_sample_method, activation, omega,
+                       hidden_layers, n_neurons):
     """Initializes params for the training run
 
     Args:
@@ -108,17 +107,18 @@ def _init_training_run(cfg, sample, lr, loss_fn, encoding, batch_size, target_sa
 
     # Create folder for this specific run
     run_folder = cfg["output_folder"] + \
-        sample.replace("/", "_") + \
-        f"/LR={lr}_loss={loss_fn.__name__}_ENC={encoding.name}_" + \
-        f"BS={batch_size}_target_sample={target_sample_method}_ACT={str(activation)[:-2]}_omega={omega:.2}" + \
-        f"_layers={hidden_layers}_neurons={n_neurons}/"
+                 sample.replace("/", "_") + \
+                 f"/LR={lr}_loss={loss_fn.__name__}_ENC={encoding.name}_" + \
+                 f"BS={batch_size}_target_sample={target_sample_method}_ACT={str(activation)[:-2]}_omega={omega:.2}" + \
+                 f"_layers={hidden_layers}_neurons={n_neurons}/"
     pathlib.Path(run_folder).mkdir(parents=True, exist_ok=True)
 
     early_stopper = EarlyStopping(save_folder=run_folder)
 
     # Init model
     model = init_network(encoding, n_neurons=n_neurons,
-                         activation=activation, model_type=cfg["model"]["type"], siren_omega=omega, hidden_layers=hidden_layers)
+                         activation=activation, model_type=cfg["model"]["type"], siren_omega=omega,
+                         hidden_layers=hidden_layers)
 
     # Setup optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -126,7 +126,7 @@ def _init_training_run(cfg, sample, lr, loss_fn, encoding, batch_size, target_sa
         optimizer, factor=0.8, patience=200, min_lr=1e-6, verbose=True)
 
     # Here we set the method to sample the target points. We use a low precision mesh to exclude points inside the asteroid.
-    sample_lp = sample[:-3]+"_lp.pk"
+    sample_lp = sample[:-3] + "_lp.pk"
     targets_point_sampler = get_target_point_sampler(
         batch_size, method=target_sample_method,
         bounds=cfg["model"]["sample_domain"], limit_shape_to_asteroid="3dmeshes/" + sample_lp)
@@ -136,12 +136,14 @@ def _init_training_run(cfg, sample, lr, loss_fn, encoding, batch_size, target_sa
         visual_target_points_sampler = get_target_point_sampler(batch_size, method="cubical", bounds=[
             0.0, 1.0], limit_shape_to_asteroid="3dmeshes/" + sample_lp)
     else:
-        def visual_target_points_sampler(): return None
+        def visual_target_points_sampler():
+            return None
 
     return model, early_stopper, optimizer, scheduler, targets_point_sampler, visual_target_points_sampler, run_folder
 
 
-def run_training(cfg, sample, loss_fn, encoding, batch_size, target_sample_method, activation, omega, hidden_layers, n_neurons):
+def run_training(cfg, sample, loss_fn, encoding, batch_size, target_sample_method, activation, omega, hidden_layers,
+                 n_neurons):
     """Runs a specific parameter configuration
     Args:
         cfg (dict): global run cfg 
@@ -158,7 +160,8 @@ def run_training(cfg, sample, loss_fn, encoding, batch_size, target_sample_metho
     start = time.time()
     # Initialize everything we need
     initialized_vars = _init_training_run(
-        cfg, sample, cfg["training"]["lr"], loss_fn, encoding, batch_size, target_sample_method, activation, omega, hidden_layers, n_neurons)
+        cfg, sample, cfg["training"]["lr"], loss_fn, encoding, batch_size, target_sample_method, activation, omega,
+        hidden_layers, n_neurons)
     model, early_stopper, optimizer, scheduler, targets_point_sampler, visual_target_points_sampler, run_folder = initialized_vars
 
     mascon_points, mascon_masses_u, mascon_masses_nu = load_sample(
@@ -176,7 +179,8 @@ def run_training(cfg, sample, loss_fn, encoding, batch_size, target_sample_metho
         if (it % 100 == 0):
             # Save a plot
             plot_model_rejection(model, encoding, views_2d=True, bw=True, N=cfg["plotting_points"], alpha=0.1,
-                                 s=50, save_path=run_folder + "rejection_plot_iter" + format(it, '06d') + ".png", c=c, progressbar=False)
+                                 s=50, save_path=run_folder + "rejection_plot_iter" + format(it, '06d') + ".png", c=c,
+                                 progressbar=False)
             plot_model_vs_mascon_contours(model, encoding, mascon_points, N=cfg["plotting_points"],
                                           save_path=run_folder + "contour_plot_iter" + format(it, '06d') + ".png", c=c)
             plt.close('all')
@@ -190,18 +194,19 @@ def run_training(cfg, sample, loss_fn, encoding, batch_size, target_sample_metho
         # We generate the labels
         if cfg["model"]["use_acceleration"]:
             if cfg["training"]["differential_training"]:
-                labels = acceleration_mascon_differential(
+                labels = mascon.acceleration_differential(
                     target_points, mascon_points, mascon_masses_u, mascon_masses_nu)
             else:
-                labels = acceleration_mascon_differential(target_points, mascon_points, mascon_masses_u)
+                labels = mascon.acceleration_differential(target_points, mascon_points, mascon_masses_u)
         else:
-            labels = potential_mascon(target_points, mascon_points, mascon_masses_u)
+            labels = mascon.potential(target_points, mascon_points, mascon_masses_u)
 
         # Train
         loss, c, vision_loss = train_on_batch(target_points, labels, model, encoding,
                                               loss_fn, optimizer, scheduler, cfg[
                                                   "integrator"], cfg["integration"]["points"],
-                                              vision_targets=visual_target_points, integration_domain=cfg["integration"]["domain"])
+                                              vision_targets=visual_target_points,
+                                              integration_domain=cfg["integration"]["domain"])
 
         # Update the loss trend indicators
         weighted_average.append(loss.item())
@@ -211,7 +216,7 @@ def run_training(cfg, sample, loss_fn, encoding, batch_size, target_sample_metho
         weighted_average_log.append(np.mean(weighted_average))
         loss_log.append(loss.item())
         vision_loss_log.append(vision_loss.item())
-        n_inferences.append((cfg["integration"]["points"]*batch_size) // 1000)
+        n_inferences.append((cfg["integration"]["points"] * batch_size) // 1000)
         wa_out = np.mean(weighted_average)
 
         t.set_postfix_str(
@@ -236,16 +241,18 @@ def run_training(cfg, sample, loss_fn, encoding, batch_size, target_sample_metho
                  validation_results, model, run_folder)
 
     save_plots(model, encoding, mascon_points, lr_log, loss_log,
-               weighted_average_log, vision_loss_log,  n_inferences, run_folder, c, cfg["plotting_points"])
+               weighted_average_log, vision_loss_log, n_inferences, run_folder, c, cfg["plotting_points"])
 
     # store run config
-    cfg_dict = {"Sample": sample, "Type": "ACC" if cfg["model"]["use_acceleration"] else "U", "Model": cfg["model"]["type"],  "Loss": loss_fn.__name__, "Encoding": encoding.name,
+    cfg_dict = {"Sample": sample, "Type": "ACC" if cfg["model"]["use_acceleration"] else "U",
+                "Model": cfg["model"]["type"], "Loss": loss_fn.__name__, "Encoding": encoding.name,
                 "Integrator": cfg["integrator"].__name__, "Activation": str(activation)[:-2],
                 "n_neurons": cfg["model"]["n_neurons"], "hidden_layers": cfg["model"]["hidden_layers"],
                 "Batch Size": batch_size, "LR": cfg["training"]["lr"], "Target Sampler": target_sample_method,
-                "Integration Points": cfg["integration"]["points"], "Vision Loss": cfg["training"]["visual_loss"], "c": c}
+                "Integration Points": cfg["integration"]["points"], "Vision Loss": cfg["training"]["visual_loss"],
+                "c": c}
 
-    with open(run_folder+'config.pk', 'wb') as handle:
+    with open(run_folder + 'config.pk', 'wb') as handle:
         pk.dump(cfg_dict, handle)
 
     # Compute validation results
@@ -254,10 +261,13 @@ def run_training(cfg, sample, loss_fn, encoding, batch_size, target_sample_metho
     end = time.time()
     runtime = end - start
     result_dictionary = {"Sample": sample,
-                         "Type": "ACC" if cfg["model"]["use_acceleration"] else "U", "Model": cfg["model"]["type"],  "Loss": loss_fn.__name__, "Encoding": encoding.name,
+                         "Type": "ACC" if cfg["model"]["use_acceleration"] else "U", "Model": cfg["model"]["type"],
+                         "Loss": loss_fn.__name__, "Encoding": encoding.name,
                          "Integrator": cfg["integrator"].__name__, "Activation": str(activation)[:-2],
-                         "Batch Size": batch_size, "LR": cfg["training"]["lr"], "Target Sampler": target_sample_method, "Integration Points": cfg["integration"]["points"],
-                         "Runtime": runtime, "Final Loss": loss_log[-1], "Final WeightedAvg Loss": weighted_average_log[-1], "Final Vision Loss": vision_loss_log[-1]}
+                         "Batch Size": batch_size, "LR": cfg["training"]["lr"], "Target Sampler": target_sample_method,
+                         "Integration Points": cfg["integration"]["points"],
+                         "Runtime": runtime, "Final Loss": loss_log[-1],
+                         "Final WeightedAvg Loss": weighted_average_log[-1], "Final Vision Loss": vision_loss_log[-1]}
     results_df = pd.concat(
         [pd.DataFrame([result_dictionary]), val_res], axis=1)
     return results_df
@@ -288,7 +298,8 @@ def load_model_run(folderpath, differential_training=False):
 
     if "n_neurons" in params and "hidden_layers" in params:  # newer cfgs have these entries
         model = init_network(
-            encoding, model_type=params["Model"], activation=activation, n_neurons=params["n_neurons"], hidden_layers=params["hidden_layers"], siren_omega=omega)
+            encoding, model_type=params["Model"], activation=activation, n_neurons=params["n_neurons"],
+            hidden_layers=params["hidden_layers"], siren_omega=omega)
     else:
         model = init_network(
             encoding, model_type=params["Model"], activation=activation, siren_omega=omega)
