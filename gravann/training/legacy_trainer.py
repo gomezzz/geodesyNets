@@ -5,80 +5,26 @@ from collections import deque
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from gravann.input._io import load_sample, save_results, save_plots
 from gravann.labels._mascon_labels import acceleration_mascon_differential, \
     potential_mascon
-from torch import nn
-from tqdm import tqdm
-
-from gravann.input._io import load_sample, save_results, save_plots
 # Required for loading runs
 from gravann.network._abs_layer import AbsLayer
 from gravann.network._encodings import *
-from gravann.network._nerf import NERF
-from gravann.network._siren import Siren
-from gravann.output._plots import plot_model_rejection, plot_model_vs_mascon_contours
 from gravann.training._losses import contrastive_loss, zero_L1_loss, normalized_relative_L2_loss, \
     normalized_relative_component_loss
+from tqdm import tqdm
+
+from gravann.output._plots import plot_model_rejection, plot_model_vs_mascon_contours
 from gravann.util._sample_observation_points import get_target_point_sampler
 from gravann.util._utils import fixRandomSeeds, EarlyStopping
-from ._validation import validation, validation_results_unpack_df
+from ._validation import validation
+from .. import validation_results_unpack_df
+from ..network.network_initalizer import init_network
 
 
-def _weights_init(m):
-    """Network initialization scheme (note that if xavier uniform is used all outputs will start at, roughly 0.5)
-
-    Args:
-        m (torch layer): layer to initialize
-    """
-    if isinstance(m, nn.Linear):
-        nn.init.xavier_uniform_(m.weight)
-        nn.init.uniform_(m.bias.data, -0.0, 0.0)
-
-
-def init_network(encoding, n_neurons=100, activation=nn.Sigmoid(), model_type="default", siren_omega=30., hidden_layers=9):
-    """ Network architecture. Note that the dimensionality of the first linear layer must match the output of the encoding chosen
-
-    Args:
-        encoding (encoding): encoding instance to use for the network
-        n_neurons (int, optional): Number of neurons per layer. Defaults to 100.
-        activation (torch activation function, optional): Activation function for the last network layer. Defaults to nn.Sigmoid().
-        model_type (str,optional): Defines what model to use. Available "siren", "default", "nerf". Defaults to "default".
-        siren_omega (float,optional): Omega value for siren activations. Defaults to 30.
-        hidden_layers (int, optional): Number of hidden layers in the network. Defaults to 9.
-
-    Returns:
-        torch model: Initialized model
-    """
-    if model_type == "default":
-        modules = []
-
-        # input layer
-        modules.append(nn.Linear(encoding.dim, n_neurons))
-        modules.append(nn.ReLU())
-
-        # hidden layers
-        for _ in range(hidden_layers-1):
-            modules.append(nn.Linear(n_neurons, n_neurons))
-            modules.append(nn.ReLU())
-
-        # final layer
-        modules.append(nn.Linear(n_neurons, 1))
-        modules.append(activation)
-        model = nn.Sequential(*modules)
-
-        # Applying our weight initialization
-        _ = model.apply(_weights_init)
-        model.in_features = encoding.dim
-        return model
-    elif model_type == "nerf":
-        return NERF(in_features=encoding.dim, n_neurons=n_neurons, activation=activation, skip=[4], hidden_layers=hidden_layers)
-    elif model_type == "siren":
-        return Siren(in_features=encoding.dim, out_features=1, hidden_features=n_neurons,
-                     hidden_layers=hidden_layers, outermost_linear=True, outermost_activation=activation,
-                     first_omega_0=siren_omega, hidden_omega_0=siren_omega)
-
-
-def train_on_batch(targets, labels, model, encoding, loss_fn, optimizer, scheduler, integrator, N, vision_targets=None, integration_domain=None):
+def train_on_batch(targets, labels, model, encoding, loss_fn, optimizer, scheduler, integrator, N, vision_targets=None,
+                   integration_domain=None):
     """Trains the passed model on the passed batch
 
     Args:

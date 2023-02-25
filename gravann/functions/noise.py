@@ -4,7 +4,7 @@ import torch.distributions
 from torch import Tensor
 
 
-def add_noise(name: str, label_fn: Callable[[Tensor], Tensor], **kwargs) -> Callable[[Tensor], Tensor]:
+def add(name: str, label_fn: Callable[[Tensor], Tensor], **kwargs) -> Callable[[Tensor], Tensor]:
     """Adds noise to a labeling function's output.
 
     Args:

@@ -1,31 +1,15 @@
 import numpy as np
 import pandas as pd
 import torch
-from gravann.functions._integration import ACC_trap, U_trap_opt, compute_integration_grid
-from gravann.labels._mascon_labels import acceleration_mascon_differential as MASCON_ACC_L, \
-    potential_mascon as MASCON_U_L
 from tqdm import tqdm
 
 from gravann import compute_c_for_model
-from gravann.training._losses import contrastive_loss, normalized_L1_loss, normalized_relative_L2_loss, \
+from gravann.functions import integration
+from gravann.labels import mascon
+from gravann.util import fixRandomSeeds
+from gravann.util import get_target_point_sampler
+from losses import contrastive_loss, normalized_L1_loss, normalized_relative_L2_loss, \
     normalized_relative_component_loss, RMSE, relRMSE
-from gravann.util._sample_observation_points import get_target_point_sampler
-from gravann.util._utils import fixRandomSeeds
-
-
-def validation_results_unpack_df(validation_results):
-    """Converts validation df to data row  
-
-    Args:
-        validation_results (pandas.df): validation results
-
-    Returns:
-        pandas.df: df as one row
-    """
-    v = validation_results.set_index("Altitude")
-    v = v.unstack().to_frame().sort_index(level=1).T
-    v.columns = [x + '@' + str(y) for (x, y) in v.columns]
-    return v
 
 
 def validation(model, encoding, mascon_points, mascon_masses,
@@ -60,29 +44,27 @@ def validation(model, encoding, mascon_points, mascon_masses,
         return x
 
     if use_acc:
-        label_function = MASCON_ACC_L
-        integrator = ACC_trap
-        integration_grid, h, N_int = compute_integration_grid(N_integration)
+        label_function = mascon.acceleration
+        integrator = integration.acceleration_trapezoid
+        integration_grid, h, N_int = integration.compute_integration_grid(N_integration)
     else:
-        label_function = MASCON_U_L
-        integrator = U_trap_opt
-        integration_grid, h, N_int = compute_integration_grid(N_integration)
+        label_function = mascon.potential
+        integrator = integration.potential_trapezoid
+        integration_grid, h, N_int = integration.compute_integration_grid(N_integration)
     if mascon_masses_nu is not None:
         c = compute_c_for_model(
             model, encoding, mascon_points, mascon_masses, mascon_masses_nu, use_acc=use_acc)
 
         # Labels for differential need to be computed on non-uniform ground truth
         def label_function(tp, mp, mm):
-            return MASCON_ACC_L(tp, mp, mascon_masses_nu)
+            return mascon.acceleration(tp, mp, mascon_masses_nu)
 
         # Predictions for differential need to be adjusted with acceleration from uniform ground truth
         def prediction_adjustment(tp, mp, mm, x):
-            return MASCON_ACC_L(tp, mp, mm) + c * x
+            return mascon.acceleration(tp, mp, mm) + c * x
 
-    loss_fns = [normalized_L1_loss,  # normalized_loss, normalized_relative_L2_loss,
-                normalized_relative_component_loss, RMSE, relRMSE]
-    cols = ["Altitude", "Normalized L1 Loss",  # "Normalized Loss", "Normalized Rel. L2 Loss",
-            "Normalized Relative Component Loss", "RMSE", "relRMSE"]
+    loss_fns = [normalized_L1_loss, normalized_relative_component_loss, RMSE, relRMSE]
+    cols = ["Altitude", "Normalized L1 Loss", "Normalized Relative Component Loss", "RMSE", "relRMSE"]
     results = pd.DataFrame(columns=cols)
 
     ###############################################

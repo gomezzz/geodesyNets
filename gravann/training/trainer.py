@@ -3,18 +3,14 @@ import time
 from collections import deque
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from gravann import plot_model_rejection
-from gravann.input._io import save_results, save_plots_v2
-from gravann.network._encodings import *
-from gravann.training._losses import contrastive_loss, normalized_relative_L2_loss, normalized_relative_component_loss
-from gravann.training._validation import validation_results_unpack_df
-from gravann.training._validation_v2 import validation_v2
-# Required for loading runs
-from ._train_v2_init import init_training_sampler, init_environment, init_model_and_optimizer, init_prediction_label, \
-    init_ground_truth_labels, init_input_data, init_noise
+from gravann.output import plot_model_rejection
+from gravann.output import plot_saver
+from . import training_initializer, validator
+from .losses import *
 
 
 def train_on_batch_v2(points, prediction_fn, labels, loss_fn, optimizer, scheduler):
@@ -63,9 +59,9 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
     start_time = time.time()
 
     # Initialize the environment and prepare the run folder
-    run_folder = init_environment(cfg)
+    run_folder = training_initializer.init_environment(cfg)
     # Initialize the model and associated torch training utility
-    model, early_stopper, optimizer, scheduler = init_model_and_optimizer(
+    model, early_stopper, optimizer, scheduler = training_initializer.init_model_and_optimizer(
         run_folder=run_folder,
         encoding=cfg["encoding"],
         n_neurons=cfg["n_neurons"],
@@ -76,26 +72,26 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
         learning_rate=cfg["learning_rate"]
     )
     # Initialize the target point sampler
-    target_points_sampler = init_training_sampler(
+    target_points_sampler = training_initializer.init_training_sampler(
         sample=cfg["sample"], target_sample_method=cfg["sample_method"],
         sample_domain=cfg["sample_domain"], batch_size=cfg["batch_size"]
     )
     # Initialize the prediction function by binding the model and defined configuration parameters
-    prediction_fn = init_prediction_label(
+    prediction_fn = training_initializer.init_prediction_label(
         model=model, encoding=cfg["encoding"],
         integration_points=cfg["integration_points"], integration_domain=cfg["integration_domain"],
         use_acc=cfg["use_acceleration"]
     )
     # Initialize the input data
-    input_data = init_input_data(
+    input_data = training_initializer.init_input_data(
         sample=cfg["sample"]
     )
     # Initialize the label function by binding the sample data
-    label_fn = init_ground_truth_labels(
+    label_fn = training_initializer.init_ground_truth_labels(
         ground_truth=cfg["ground_truth"], input_data=input_data, use_acc=cfg["use_acceleration"]
     )
     # Add noise on top (if defined)
-    label_fn = init_noise(
+    label_fn = training_initializer.init_noise(
         label_fn, cfg["noise_method"], cfg["noise_params"]
     )
 
@@ -155,7 +151,7 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
         "sampling_altitudes": cfg["validation_sampling_altitudes"]
     }
     validation_kwargs.update(input_data)
-    validation_results = validation_v2(
+    validation_results = validator.validation_v2(
         model,
         cfg["encoding"],
         cfg["sample"],
@@ -166,9 +162,9 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
     )
 
     print("Saving...")
-    save_results(loss_log, weighted_average_log, validation_results, model, run_folder)
+    plot_saver.save_results(loss_log, weighted_average_log, validation_results, model, run_folder)
 
-    save_plots_v2(
+    plot_saver.save_plots_v2(
         model, cfg["encoding"], cfg["sample"],
         lr_log, loss_log, weighted_average_log,
         n_inferences, run_folder, c, cfg["plotting_points"]
@@ -199,7 +195,7 @@ def run_training_v2(cfg: dict) -> pd.DataFrame:
         pk.dump(cfg_dict, handle)
 
     # Compute validation results
-    val_res = validation_results_unpack_df(validation_results)
+    val_res = validator.validation_results_unpack_df(validation_results)
 
     # Time Measurements
     end_time = time.time()

@@ -2,9 +2,8 @@ import os
 import pickle
 
 import torch
-from gravann.network._abs_layer import AbsLayer
 
-from gravann import init_network, direct_encoding
+from gravann.network import network_initalizer, encodings, layers
 
 
 def read_data(root_directory) -> list:
@@ -31,26 +30,19 @@ def populate_models(models: list) -> list:
 
 def populate_model(cfg: dict, model_stats: dict) -> torch.nn.Module:
     ENCODING_TMP_REGISTRY = {
-        "direct_encoding": direct_encoding
+        "direct_encoding": encodings.direct_encoding
     }
     encoding = ENCODING_TMP_REGISTRY[cfg["Encoding"]]()
 
     if cfg["Activation"] == "AbsLayer":
-        activation = AbsLayer()
+        activation = layers.AbsLayer()
     else:
         activation = getattr(torch.nn, cfg["Activation"])()
 
     # TODO Adapt omega if it is different!
-    model = init_network(encoding, model_type=cfg["Model"], activation=activation, n_neurons=cfg["n_neurons"], hidden_layers=cfg["hidden_layers"], siren_omega=30.0)
+    model = network_initalizer.init_network(encoding, model_type=cfg["Model"], activation=activation,
+                                            n_neurons=cfg["n_neurons"], hidden_layers=cfg["hidden_layers"],
+                                            siren_omega=30.0)
     model.load_state_dict(model_stats)
 
     return model
-
-
-
-m = read_data("F:\\results")
-
-
-c = populate_model(m[0][0], m[0][1])
-
-print(c)

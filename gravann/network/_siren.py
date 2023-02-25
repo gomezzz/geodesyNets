@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from layers import SineLayer, AbsLayer
+from .layers import SineLayer, AbsLayer
 
 
 # From https://github.com/vsitzmann/siren/blob/master/explore_siren.ipynb

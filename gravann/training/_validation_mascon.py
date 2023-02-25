@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
 import torch
-from gravann.labels._mascon_labels import acceleration_mascon_differential
 from tqdm import tqdm
 
-from gravann.training._losses import (
+from gravann.labels.mascon import acceleration_differential
+from gravann.util import get_target_point_sampler, fixRandomSeeds
+from losses import (
     contrastive_loss,
     normalized_L1_loss,
     normalized_relative_L2_loss,
@@ -12,8 +13,6 @@ from gravann.training._losses import (
     RMSE,
     relRMSE,
 )
-from gravann.util._sample_observation_points import get_target_point_sampler
-from gravann.util._utils import fixRandomSeeds
 
 
 def validation_mascon(
@@ -24,9 +23,9 @@ def validation_mascon(
         asteroid_pk_path,
         N=5000,
         sampling_altitudes=[0.05, 0.1, 0.25],
-    batch_size=100,
-    russell_points=3,
-    progressbar=True,
+        batch_size=100,
+        russell_points=3,
+        progressbar=True,
 ):
     """Computes different loss values for the passed model and asteroid with high precision
     Args:
@@ -91,8 +90,8 @@ def validation_mascon(
             )
         )
         points = target_points[indices]
-        labels.append(acceleration_mascon_differential(points, mascon_points, mascon_masses).detach())
-        pred.append(acceleration_mascon_differential(points, mascon_cube_points, mascon_cube_masses).detach())
+        labels.append(acceleration_differential(points, mascon_points, mascon_masses).detach())
+        pred.append(acceleration_differential(points, mascon_cube_points, mascon_cube_masses).detach())
         if progressbar:
             pbar.update(batch_size)
 
@@ -141,8 +140,8 @@ def validation_mascon(
             )
         )
         points = target_points[indices]
-        labels.append(acceleration_mascon_differential(points, mascon_points, mascon_masses).detach())
-        pred.append(acceleration_mascon_differential(points, mascon_cube_points, mascon_cube_masses).detach())
+        labels.append(acceleration_differential(points, mascon_points, mascon_masses).detach())
+        pred.append(acceleration_differential(points, mascon_cube_points, mascon_cube_masses).detach())
         if progressbar:
             pbar.update(batch_size)
 
@@ -186,9 +185,9 @@ def validation_mascon(
         for batch in range(N // batch_size):
             target_points = target_sampler().detach()
             labels.append(
-                acceleration_mascon_differential(target_points, mascon_points, mascon_masses).detach())
+                acceleration_differential(target_points, mascon_points, mascon_masses).detach())
             pred.append(
-                acceleration_mascon_differential(target_points, mascon_cube_points, mascon_cube_masses).detach()
+                acceleration_differential(target_points, mascon_cube_points, mascon_cube_masses).detach()
             )
 
             if progressbar:

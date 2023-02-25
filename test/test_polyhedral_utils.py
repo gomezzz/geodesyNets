@@ -1,6 +1,6 @@
 import numpy as np
 
-from gravann.polyhedral import calculate_volume
+from gravann.labels import calculate_volume
 
 cube_vertices = np.array([
     [-1, -1, -1],

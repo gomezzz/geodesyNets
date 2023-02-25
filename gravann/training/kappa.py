@@ -1,11 +1,9 @@
 import torch
-from gravann.functions._integration import ACC_trap, U_trap_opt
-from gravann.labels._mascon_labels import acceleration_mascon_differential as MASCON_ACC_L, \
-    potential_mascon as MASCON_U_L, acceleration_mascon_differential as MASCON_ACC_L_differential
-from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L
 
-from gravann.input._io import load_sample, load_polyhedral_mesh
-from gravann.util._sample_observation_points import get_target_point_sampler
+from gravann.functions import integration
+from gravann.input import sample_reader
+from gravann.labels import mascon, polyhedral
+from gravann.util import get_target_point_sampler
 
 
 def compute_c_for_model_v2(model, encoding, method, use_acc=True, **kwargs):
@@ -29,14 +27,14 @@ def compute_c_for_model_v2(model, encoding, method, use_acc=True, **kwargs):
     sample = kwargs.get("sample", None)
     if method == 'mascon':
         if sample is not None:
-            mascon_points, mascon_masses, mascon_masses_nu = load_sample(sample, use_acc)
+            mascon_points, mascon_masses, mascon_masses_nu = sample_reader.load_sample(sample, use_acc)
         else:
             mascon_points, mascon_masses, mascon_masses_nu = kwargs.get("mascon_points", None), kwargs.get(
                 "mascon_masses", None), kwargs.get("mascon_masses_nu", None)
         return compute_c_for_model(model, encoding, mascon_points, mascon_masses, mascon_masses_nu, use_acc)
     elif method == 'polyhedral':
         if sample is not None:
-            mesh_vertices, mesh_faces = load_polyhedral_mesh(sample)
+            mesh_vertices, mesh_faces = sample_reader.load_polyhedral_mesh(sample)
         else:
             mesh_vertices, mesh_faces = kwargs.get("mesh_vertices", None), kwargs.get("mesh_faces", None)
         return _compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, use_acc)
@@ -58,18 +56,18 @@ def compute_c_for_model(model, encoding, mascon_points, mascon_masses, mascon_ma
     if use_acc:
         if mascon_masses_nu is None:
             return _compute_c_for_model(
-                lambda x: MASCON_ACC_L(x, mascon_points, mascon_masses),
-                lambda x: ACC_trap(x, model, encoding, N=100000)
+                lambda x: mascon.acceleration(x, mascon_points, mascon_masses),
+                lambda x: integration.acceleration_trapezoid(x, model, encoding, N=100000)
             )
         else:
             return _compute_c_for_model(
-                lambda x: MASCON_ACC_L_differential(x, mascon_points, mascon_masses, mascon_masses_nu),
-                lambda x: ACC_trap(x, model, encoding, N=100000)
+                lambda x: mascon.acceleration_differential(x, mascon_points, mascon_masses, mascon_masses_nu),
+                lambda x: integration.acceleration_trapezoid(x, model, encoding, N=100000)
             )
     else:
         return _compute_c_for_model(
-            lambda x: MASCON_U_L(x, mascon_points, mascon_masses),
-            lambda x: U_trap_opt(x, model, encoding, N=100000)
+            lambda x: mascon.potential(x, mascon_points, mascon_masses),
+            lambda x: integration.potential_trapezoid(x, model, encoding, N=100000)
         )
 
 
@@ -85,13 +83,13 @@ def _compute_c_for_model_polyhedral(model, encoding, mesh_vertices, mesh_faces, 
     """
     if use_acc:
         return _compute_c_for_model(
-            lambda x: POLYHEDRAL_ACC_L(x, mesh_vertices, mesh_faces),
-            lambda x: ACC_trap(x, model, encoding, N=100000)
+            lambda x: polyhedral.acceleration(x, mesh_vertices, mesh_faces),
+            lambda x: integration.acceleration_trapezoid(x, model, encoding, N=100000)
         )
     else:
         return _compute_c_for_model(
-            lambda x: POLYHEDRAL_U_L(x, mesh_vertices, mesh_faces),
-            lambda x: U_trap_opt(x, model, encoding, N=100000)
+            lambda x: polyhedral.potential(x, mesh_vertices, mesh_faces),
+            lambda x: integration.potential_trapezoid(x, model, encoding, N=100000)
         )
 
 

@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from layers import NERFLayer
+from .layers import NERFLayer
 
 
 class NERF(nn.Module):

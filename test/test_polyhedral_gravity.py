@@ -2,13 +2,12 @@ import itertools
 
 import pytest
 import torch
-from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L
 from polyhedral_gravity.utility import check_mesh
 
-from gravann import acceleration_mascon_differential as MASCON_ACC_L, potential_mascon as MASCON_U_L, load_mascon_data, \
-    load_polyhedral_mesh, \
-    get_target_point_sampler
-from gravann.training._losses import relRMSE
+from gravann.input import sample_reader
+from gravann.labels import mascon, polyhedral
+from gravann.training.losses import relRMSE
+from gravann.util import get_target_point_sampler
 
 # ====================== TEST PARAMETERS ======================
 # The tested bodies
@@ -37,8 +36,8 @@ def get_data(sample: str):
 
     """
     # Get the mascon & mesh data
-    mascon_points, mascon_masses = load_mascon_data(sample)
-    vertices, triangles = load_polyhedral_mesh(sample)
+    mascon_points, mascon_masses = sample_reader.load_mascon_data(sample)
+    vertices, triangles = sample_reader.load_polyhedral_mesh(sample)
 
     # Pack everything together
     return (mascon_points, mascon_masses), (vertices, triangles), sample
@@ -80,12 +79,12 @@ def test_compare_mascon_polyhedral_model(data, distance):
     target_points = get_target_point()
 
     # Compute the potential and the acceleration with the two model
-    mascon_potential = torch.squeeze(MASCON_U_L(target_points, mascon_points, mascon_masses))
+    mascon_potential = torch.squeeze(mascon.potential(target_points, mascon_points, mascon_masses))
     polyhedral_potential = torch.squeeze(
-        POLYHEDRAL_U_L(target_points, vertices, triangles))
-    mascon_acceleration = torch.squeeze(MASCON_ACC_L(target_points, mascon_points, mascon_masses))
+        polyhedral.potential(target_points, vertices, triangles))
+    mascon_acceleration = torch.squeeze(mascon.acceleration(target_points, mascon_points, mascon_masses))
     polyhedral_acceleration = torch.squeeze(
-        POLYHEDRAL_ACC_L(target_points, vertices, triangles))
+        polyhedral.acceleration(target_points, vertices, triangles))
 
     # Compare the results
     assert mascon_potential == pytest.approx(polyhedral_potential, rel=TEST_EPSILON)
@@ -98,5 +97,5 @@ def test_check_input_mesh(sample):
     """
     Checks that the input mesh's plane unit normals are outwards pointing
     """
-    vertices, triangles = load_polyhedral_mesh(sample)
+    vertices, triangles = sample_reader.load_polyhedral_mesh(sample)
     assert check_mesh(vertices, triangles)

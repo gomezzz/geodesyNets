@@ -1,17 +1,68 @@
+import pathlib
 from typing import Callable, Union
 
-from gravann._train import init_network
-from gravann.functions._integration import ACC_trap, U_trap_opt
-from gravann.labels._mascon_labels import acceleration_mascon_differential as MASCON_ACC_L, \
-    potential_mascon as MASCON_U_L
-from gravann.network._encodings import *
-from gravann.polyhedral import ACC_L as POLYHEDRAL_ACC_L, U_L as POLYHEDRAL_U_L, calculate_density
-from gravann.util._noise import get_noise_fn
+import numpy as np
+import torch
 
-from gravann import load_polyhedral_mesh, load_mascon_data
-from gravann.training import environment_initializer
-from gravann.util._sample_observation_points import get_target_point_sampler
-from gravann.util._utils import EarlyStopping
+from gravann.functions import integration, noise
+from gravann.input import sample_reader
+from gravann.labels import mascon, polyhedral, calculate_density
+from gravann.network import network_initalizer
+from gravann.util import EarlyStopping, get_target_point_sampler
+
+
+def get_run_folder(cfg: dict, create_folder: bool = False) -> str:
+    """Returns a run folder path as string for a given configuration.
+    Args:
+        cfg: dictionary with the configuration
+        create_folder: if the run_folder should also be created for the system
+
+    Returns:
+        path as string
+
+    """
+    domain = str(cfg['sample_domain']) \
+        .replace('.', '_').replace('[', '').replace(']', '').replace(',', '').replace(' ', '=')
+
+    run_folder = (
+        f"{cfg['output_folder']}/"
+        f"{cfg['sample']}/"
+        f"{cfg['ground_truth']}/"
+        f"SEED={cfg['seed']}_LR={cfg['learning_rate']}_LOSS={cfg['loss_fn'].__name__}_"
+        f"ENC={cfg['encoding'].name}_ACT={str(cfg['activation'])[:-2]}_"
+        f"BS={cfg['batch_size']}_LAYERS={cfg['hidden_layers']}_NEURONS={cfg['n_neurons']}_"
+        f"METHOD={cfg['sample_method']}_DOMAIN={domain}_NOISE={cfg['noise_method']}/"
+    )
+
+    if create_folder:
+        pathlib.Path(run_folder).mkdir(parents=True, exist_ok=True)
+
+    return run_folder
+
+
+def init_cuda_environment(cfg: dict) -> None:
+    """Empties the cuda cache and inits random seed generators of numpy and torch.
+
+    Args:
+        cfg: parameters, should contain an entry {'seed': _}
+
+    Returns:
+        None
+
+    """
+    torch.cuda.empty_cache()
+    # Fix the random seeds for this run
+    _fixate_seeds(cfg['seed'])
+
+
+def _fixate_seeds(seed: int = 42):
+    """This function sets the random seeds in torch and numpy to enable reproducible behavior.
+
+    Args:
+        seed (optional): the chosen seed, defaults to 42
+    """
+    torch.manual_seed(seed)
+    np.random.seed(seed)
 
 
 def init_environment(parameters: dict) -> str:
@@ -24,8 +75,8 @@ def init_environment(parameters: dict) -> str:
         the run folder
 
     """
-    environment_initializer.init_cuda_environment(parameters)
-    return environment_initializer.get_run_folder(parameters, create_folder=True)
+    init_cuda_environment(parameters)
+    return get_run_folder(parameters, create_folder=True)
 
 
 def init_model_and_optimizer(run_folder: str, encoding: any, n_neurons: int, activation: any, model_type: str,
@@ -47,7 +98,7 @@ def init_model_and_optimizer(run_folder: str, encoding: any, n_neurons: int, act
 
     """
     # Initializes the model
-    model = init_network(
+    model = network_initalizer.init_network(
         encoding,
         n_neurons=n_neurons,
         activation=activation,
@@ -113,9 +164,10 @@ def init_prediction_label(model, encoding, integration_points, integration_domai
 
     """
     if use_acc:
-        return lambda points: ACC_trap(points, model, encoding, N=integration_points, domain=integration_domain)
+        return lambda points: integration.acceleration_trapezoid(points, model, encoding, N=integration_points,
+                                                                 domain=integration_domain)
     else:
-        return lambda points: U_trap_opt(points, model, encoding, N=integration_points)
+        return lambda points: integration.potential_trapezoid(points, model, encoding, N=integration_points)
 
 
 def init_input_data(sample: str) -> dict:
@@ -128,8 +180,8 @@ def init_input_data(sample: str) -> dict:
         dictionary conatining the input data
 
     """
-    mesh_vertices, mesh_faces = load_polyhedral_mesh(sample)
-    mascon_points, mascon_masses_u = load_mascon_data(sample)
+    mesh_vertices, mesh_faces = sample_reader.load_polyhedral_mesh(sample)
+    mascon_points, mascon_masses_u = sample_reader.load_mascon_data(sample)
     return {
         "mesh_vertices": mesh_vertices,
         "mesh_faces": mesh_faces,
@@ -163,18 +215,18 @@ def _init_polyhedral_label(mesh_vertices, mesh_edges, density, use_acc=True):
     """Inits the polyhedral labels by binding mesh_vertices and mesh_edges to the evaluation function.
     """
     if use_acc:
-        return lambda points: POLYHEDRAL_ACC_L(points, mesh_vertices, mesh_edges, density)
+        return lambda points: polyhedral.acceleration(points, mesh_vertices, mesh_edges, density)
     else:
-        return lambda points: POLYHEDRAL_U_L(points, mesh_vertices, mesh_edges, density)
+        return lambda points: polyhedral.potential(points, mesh_vertices, mesh_edges, density)
 
 
 def _init_mascon_label(mascon_points, mascon_masses, use_acc=True):
     """Inits the mascon labels by binding mascon_points and (uniform) mascon_masses to the evaluation function.
     """
     if use_acc:
-        return lambda points: MASCON_ACC_L(points, mascon_points, mascon_masses)
+        return lambda points: mascon.acceleration(points, mascon_points, mascon_masses)
     else:
-        return lambda points: MASCON_U_L(points, mascon_points, mascon_masses)
+        return lambda points: mascon.potential(points, mascon_points, mascon_masses)
 
 
 def init_noise(
@@ -195,4 +247,4 @@ def init_noise(
     if method is None or method == "":
         return label_fn
     else:
-        return get_noise_fn(method, label_fn, **method_param)
+        return noise.add(method, label_fn, **method_param)

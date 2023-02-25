@@ -1,9 +1,10 @@
 # core stuff
-import gravann
-import os
 import glob
-import pandas as pd
+import os
+
+import gravann.training._validation_v2
 import numpy as np
+import pandas as pd
 
 # name = "VALIDATION"
 # root_folder = "results/validate/"
@@ -73,7 +74,7 @@ for folder in folders:
     )
 
     # Compute validation results
-    val_res = gravann.validation_results_unpack_df(validation_results)
+    val_res = gravann.training._validation_v2.validation_results_unpack_df(validation_results)
 
     # Accumulate results
     result_dictionary = {
