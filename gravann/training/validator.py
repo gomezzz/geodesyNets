@@ -39,7 +39,7 @@ def validate(model, encoding, sample, ground_truth, use_acc=True, **kwargs):
         pandas dataframe: Results as df
 
     """
-    label_function = label_binder.bind_label(ground_truth, use_acc, **kwargs)
+    label_function = label_binder.bind_label(ground_truth, use_acc, sample=sample, **kwargs)
     prediction_function = function_binder.bind_integration('trapezoid', use_acc, model, encoding, **kwargs)
     return _validation(label_function, prediction_function, sample, **kwargs)
 
