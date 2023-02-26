@@ -15,11 +15,11 @@ dependencies:
   - polyhedral-gravity-model
   - pytorch
   - torchvision
-  - torchaudio
   - pytorch-cuda=11.7
   - pytest
   - pytest-xdist
   - toml
+  - seaborn
   - pip
   - pip:
       - sobol_seq
