@@ -65,3 +65,19 @@ class NERFLayer(nn.Module):
 
     def forward(self, input):
         return self.activation(self.linear(input))
+
+
+def get_activation_layer(layer_name: str) -> nn.Module:
+    """Returns a layer for a given layer name
+
+    Args:
+        layer_name: the name of the layer as str
+
+    Returns:
+        a layer
+
+    """
+    if layer_name == "AbsLayer":
+        return AbsLayer()
+    else:
+        return getattr(torch.nn, layer_name)()

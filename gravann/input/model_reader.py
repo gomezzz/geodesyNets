@@ -1,48 +1,73 @@
 import os
 import pickle
+from typing import List, Tuple, Dict
 
 import torch
+import torch.nn as nn
 
 from gravann.network import network_initalizer, encodings, layers
 
 
-def read_data(root_directory) -> list:
+def read_models(root_directory: os.PathLike) -> List[Tuple[nn.Module, Dict]]:
+    """Reads all models and their configuration from a given root directory. Each "best_model.mdl" file needs
+    to be in the same directory as the "config.pk in order to be associated with it.
+
+    Args:
+        root_directory: the directory from where to recursively start searching
+
+    Returns:
+        list of tuples of neural network and configuration
+
+    """
     models = []
-    for dirpath, _, filenames in os.walk(root_directory):
+    for dir_path, _, filenames in os.walk(root_directory):
         model_stats, config = None, None
         for filename in filenames:
+            path = os.path.join(dir_path, filename)
             if filename.endswith("best_model.mdl"):
-                model_stats = torch.load(os.path.join(dirpath, filename))
+                model_stats = torch.load(path)
             elif filename.endswith("config.pk"):
-                with open(os.path.join(dirpath, filename), 'rb') as file:
-                    config = pickle.load(file)
-        if model_stats is not None:
-            models.append((config, model_stats))
+                config = _read_config_file(path)
+        if model_stats is not None and config is not None:
+            populated_model = _populate_model(model_stats, config)
+            models.append((populated_model, config))
     return models
 
 
-def populate_models(models: list) -> list:
-    models = []
-    for config, model_stats in models:
-        models.append((config, populate_model(config, model_stats)))
-    return models
+def _read_config_file(path: str) -> dict:
+    """Reads a pickled config from file
+
+    Args:
+        path: the path to the file
+
+    Returns:
+        dictionary of the config
+
+    """
+    with open(path, 'rb') as file:
+        return pickle.load(file)
 
 
-def populate_model(cfg: dict, model_stats: dict) -> torch.nn.Module:
-    ENCODING_TMP_REGISTRY = {
-        "direct_encoding": encodings.direct_encoding
-    }
-    encoding = ENCODING_TMP_REGISTRY[cfg["Encoding"]]()
+def _populate_model(model_stats: dict, config: dict) -> nn.Module:
+    """Initializes a model from the given neuron weights in a dict model_states and a given config.
 
-    if cfg["Activation"] == "AbsLayer":
-        activation = layers.AbsLayer()
-    else:
-        activation = getattr(torch.nn, cfg["Activation"])()
+    Args:
+        model_stats: the neurons' weights
+        config: the configuration of the model
 
-    # TODO Adapt omega if it is different!
-    model = network_initalizer.init_network(encoding, model_type=cfg["Model"], activation=activation,
-                                            n_neurons=cfg["n_neurons"], hidden_layers=cfg["hidden_layers"],
-                                            siren_omega=30.0)
+    Returns:
+        the populated model
+
+    """
+    encoding = encodings.get_encoding(config["Encoding"])
+    activation = layers.get_activation_layer(config["Activation"])
+    model = network_initalizer.init_network(
+        encoding,
+        model_type=config["Model"],
+        activation=activation,
+        n_neurons=config["n_neurons"],
+        hidden_layers=config["hidden_layers"],
+        siren_omega=config.get("Omega", 30.0)  # Omega was not always saved, but it was always 30.0
+    )
     model.load_state_dict(model_stats)
-
     return model

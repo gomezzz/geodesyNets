@@ -5,7 +5,7 @@ import numpy as np
 import sobol_seq
 import torch
 
-from gravann.network.encodings import direct_encoding
+from gravann.network.encodings import DirectEncoding
 
 
 def compute_sobol_points(N=3, M=500000):
@@ -59,7 +59,7 @@ def rho_trap(model, encoding, mask, c, N=10000):
     return int_z
 
 
-def potential_monte_carlo(target_points, model, encoding=direct_encoding(), N=3000, domain=None):
+def potential_monte_carlo(target_points, model, encoding=DirectEncoding(), N=3000, domain=None):
     """Plain Monte Carlo evaluation of the potential from the modelled density
 
     Args:
@@ -92,7 +92,7 @@ def potential_monte_carlo(target_points, model, encoding=direct_encoding(), N=30
 # Low-discrepancy Montecarlo for the potential
 
 
-def potential_monte_carlo_ld(target_points, model, sobol_points, encoding=direct_encoding(), N=3000, noise=0.,
+def potential_monte_carlo_ld(target_points, model, sobol_points, encoding=DirectEncoding(), N=3000, noise=0.,
                              domain=None):
     """Low discrepancy Monte Carlo evaluation of the potential from the modelled density
 
@@ -137,7 +137,7 @@ def potential_monte_carlo_ld(target_points, model, sobol_points, encoding=direct
 # Trapezoid rule for the potential
 
 
-def potential_trapezoid(target_points, model, encoding=direct_encoding(), N=10000, verbose=False, noise=0.,
+def potential_trapezoid(target_points, model, encoding=DirectEncoding(), N=10000, verbose=False, noise=0.,
                         sample_points=None, h=None, domain=None):
     """Uses a 3D trapezoid rule for the evaluation of the integral in the potential from the modeled density
 
@@ -195,7 +195,7 @@ def potential_trapezoid(target_points, model, encoding=direct_encoding(), N=1000
 # Low-discrepancy Montecarlo for the acceleration
 
 
-def acceleration_monte_carlo_ld(target_points, model, encoding=direct_encoding(), N=3000, noise=0., domain=None):
+def acceleration_monte_carlo_ld(target_points, model, encoding=DirectEncoding(), N=3000, noise=0., domain=None):
     """Low discrepancy Monte Carlo evaluation of the potential from the modelled density
 
     Args:
@@ -235,7 +235,7 @@ def acceleration_monte_carlo_ld(target_points, model, encoding=direct_encoding()
     return - 8 * retval
 
 
-def acceleration_trapezoid(target_points, model, encoding=direct_encoding(), N=10000, verbose=False, noise=0.,
+def acceleration_trapezoid(target_points, model, encoding=DirectEncoding(), N=10000, verbose=False, noise=0.,
                            sample_points=None, h=None, domain=None):
     """Uses a 3D trapezoid rule for the evaluation of the integral in the potential from the modeled density
 

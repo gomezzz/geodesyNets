@@ -1,8 +1,22 @@
+from abc import ABC, abstractmethod
+
 import numpy as np
 import torch
 
 
-class directional_encoding:
+class Encoding(ABC):
+    """Abstract encoding
+    """
+
+    name: str
+    dim: int
+
+    @abstractmethod
+    def __call__(self, sp):
+        pass
+
+
+class DirectionalEncoding(Encoding):
     """ Directional encoding
     x = [x,y,z] is encoded as [ix, iy, iz, r]
     """
@@ -18,7 +32,7 @@ class directional_encoding:
         return torch.cat((unit, torch.norm(sp, dim=1).view(-1, 1)), dim=1)
 
 
-class positional_encoding:
+class PositionalEncoding(Encoding):
     """ Positional encoding
     x = [x,y,z] is encoded as [sin(pi x), sin(pi y), sin(pi z), cos(pi x), cos(pi y), cos(pi z), sin(2 pi x), ....]
     """
@@ -35,7 +49,7 @@ class positional_encoding:
         return retval
 
 
-class direct_encoding:
+class DirectEncoding(Encoding):
     """Direct encoding:
     x = [x,y,z] is encoded as [x,y,z]
     """
@@ -48,7 +62,7 @@ class direct_encoding:
         return sp
 
 
-class spherical_coordinates:
+class SphericalCoordinates(Encoding):
     """Spherical encoding:
     x = [x,y,z] is encoded as [r,phi,theta] (i.e. spherical coordinates)
     """
@@ -62,3 +76,24 @@ class spherical_coordinates:
         r = torch.norm(sp, dim=1)
         theta = torch.div(sp[:, 2], r)
         return torch.cat((r.view(-1, 1), phi.view(-1, 1), theta.view(-1, 1)), dim=1)
+
+
+def get_encoding(encoding_name: str) -> Encoding:
+    """Returns an encoding for a given encoding name
+
+    Args:
+        encoding_name: the name of the encoding as str
+
+    Returns:
+        an encoding
+
+    """
+    try:
+        return {
+            "directional_encoding": DirectionalEncoding,
+            "positional_encoding": PositionalEncoding,
+            "direct_encoding": DirectEncoding,
+            "spherical_coordinates": SphericalCoordinates
+        }[encoding_name]
+    except KeyError:
+        raise NotImplementedError(f"The requested encoding {encoding_name} does not exist!")
