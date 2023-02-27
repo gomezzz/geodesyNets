@@ -1,3 +1,4 @@
+import inspect
 from typing import Callable, Union
 
 import torch
@@ -49,11 +50,6 @@ _NOISE_METHOD_REGISTRY = {
     "constant_bias": noise.constant_bias
 }
 
-_NOISE_METHOD_ARGUMENT_REGISTRY = {
-    "gaussian": ['mean', 'std'],
-    "constant_bias": ['bias']
-}
-
 
 def bind_noise(
         method: Union[str, None], label_fn: Callable[[torch.Tensor], torch.Tensor], **kwargs
@@ -77,8 +73,9 @@ def bind_noise(
     if method is None or method == "":
         return label_fn
     try:
-        return _NOISE_METHOD_REGISTRY[method](
-            label_fn, **{k: v for k, v in kwargs.items() if k in _NOISE_METHOD_ARGUMENT_REGISTRY[method]}
+        noise_method = _NOISE_METHOD_REGISTRY[method]
+        return noise_method(
+            label_fn, **{k: v for k, v in kwargs.items() if k in inspect.getfullargspec(noise_method).args}
         )
     except KeyError:
         raise NotImplementedError(f"The chosen {method} does not exist/ is not correctly implemented!")
