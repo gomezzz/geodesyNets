@@ -77,7 +77,7 @@ def get_activation_layer(layer_name: str) -> nn.Module:
         a layer
 
     """
-    if layer_name == "AbsLayer":
+    if layer_name == "AbsLayer" or layer_name == "Abs":
         return AbsLayer()
     else:
         return getattr(torch.nn, layer_name)()

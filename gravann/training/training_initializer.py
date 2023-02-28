@@ -1,3 +1,4 @@
+import os
 import pathlib
 
 import numpy as np
@@ -17,17 +18,11 @@ def get_run_folder(cfg: dict, create_folder: bool = False) -> str:
         path as string
 
     """
-    domain = str(cfg['sample_domain']) \
-        .replace('.', '_').replace('[', '').replace(']', '').replace(',', '').replace(' ', '=')
-
-    run_folder = (
-        f"{cfg['output_folder']}/"
-        f"{cfg['sample']}/"
-        f"{cfg['ground_truth']}/"
-        f"SEED={cfg['seed']}_LR={cfg['learning_rate']}_LOSS={cfg['loss_fn'].__name__}_"
-        f"ENC={cfg['encoding'].name}_ACT={str(cfg['activation'])[:-2]}_"
-        f"BS={cfg['batch_size']}_LAYERS={cfg['hidden_layers']}_NEURONS={cfg['n_neurons']}_"
-        f"METHOD={cfg['sample_method']}_DOMAIN={domain}_NOISE={cfg['noise_method']}/"
+    run_folder = os.path.join(
+        f"{cfg['output_folder']}",
+        f"{cfg['sample']}",
+        f"{cfg['ground_truth']}",
+        f"it-id-{cfg['run_id']:04d}"
     )
 
     if create_folder:

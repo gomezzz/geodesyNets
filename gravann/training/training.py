@@ -1,3 +1,4 @@
+import os
 import pickle as pk
 import time
 from collections import deque
@@ -81,9 +82,9 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
     for it in t:
         if it % 500 == 0:
             plot_model_rejection(
-                model, encoding=cfg["encoding"],
+                model, encoding=encoding,
                 views_2d=True, bw=True, N=cfg["plotting_points"], alpha=0.1, s=50, c=c,
-                save_path=f"{run_folder}rejection_plot_iter{it}.png"
+                save_path=os.path.join(run_folder, f"rejection_plot_iter{it}.png")
             )
             plt.close('all')
         # Each ten epochs we resample the target points
@@ -113,7 +114,7 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
         torch.cuda.empty_cache()
     # Restore best checkpoint
     print("Restoring best checkpoint for validation...")
-    model.load_state_dict(torch.load(run_folder + "best_model.mdl"))
+    model.load_state_dict(torch.load(os.path.join(run_folder, "best_model.mdl")))
 
     # Compute the validation
     print("Validating...")
@@ -125,7 +126,7 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
     }
     validation_results = validator.validate(
         model,
-        cfg["encoding"],
+        encoding,
         cfg["sample"],
         cfg["validation_ground_truth"],
         cfg.get("use_acceleration", True),
@@ -136,7 +137,7 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
     plot_saver.save_results(loss_log, weighted_average_log, validation_results, model, run_folder)
 
     plot_saver.save_plots_v2(
-        model, cfg["encoding"], cfg["sample"],
+        model, encoding, cfg["sample"],
         lr_log, loss_log, weighted_average_log,
         n_inferences, run_folder, c, cfg["plotting_points"]
     )
@@ -144,7 +145,7 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
     cfg.update({
         "c": c
     })
-    with open(run_folder + 'config.pk', 'wb') as handle:
+    with open(os.path.join(run_folder, 'config.pk'), 'wb') as handle:
         pk.dump(cfg, handle)
 
     # Compute validation results
@@ -159,7 +160,7 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
                          "Type": cfg["use_acceleration"],
                          "Model": cfg["model_type"],
                          "Loss": cfg["loss"],
-                         "Encoding": cfg["encoding"].name,
+                         "Encoding": cfg["encoding"],
                          "Integrator": cfg["integrator"],
                          "Activation": cfg["activation"],
                          "Batch Size": cfg["batch_size"],

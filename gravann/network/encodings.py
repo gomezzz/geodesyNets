@@ -8,9 +8,6 @@ class Encoding(ABC):
     """Abstract encoding
     """
 
-    name: str
-    dim: int
-
     @abstractmethod
     def __call__(self, sp):
         pass
@@ -94,6 +91,6 @@ def get_encoding(encoding_name: str) -> Encoding:
             "positional_encoding": PositionalEncoding,
             "direct_encoding": DirectEncoding,
             "spherical_coordinates": SphericalCoordinates
-        }[encoding_name]
+        }[encoding_name]()
     except KeyError:
         raise NotImplementedError(f"The requested encoding {encoding_name} does not exist!")

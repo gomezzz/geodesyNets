@@ -12,8 +12,8 @@ def run(cfg: dict) -> None:
     """This function runs all the permutations of above settings
     """
     cfg, results_df = _init_env(cfg)
-    print("Using the following samples:", cfg["samples"])
     enableCUDA()
+    print("Using the following samples:", cfg["samples"])
     print("Will use device ", os.environ["TORCH_DEVICE"])
 
     iterable_parameters = [
@@ -54,7 +54,8 @@ def run(cfg: dict) -> None:
                 # Name of the sample and other administrative stuff like the chosen seed
                 ########################################################################################################
                 "sample": sample,
-                "output_folder": f"training_{it:04d}_{cfg['output_folder']}",
+                "output_folder": f"{os.path.join('results', cfg['name'])}",
+                "run_id": it,
                 "plotting_points": cfg["plotting_points"],
                 "seed": seed,
                 ########################################################################################################
@@ -102,24 +103,22 @@ def run(cfg: dict) -> None:
                 "integration_domain": cfg["integration"]["domain"]
             })
             results_df = results_df.append(run_results, ignore_index=True)
-            results_df.to_csv(f"{cfg['output_folder']}/results_checkpoint_{it}.csv", index=False)
+            results_df.to_csv(os.path.join("results", cfg['name'], f"results_checkpoint_{it:04d}.csv"), index=False)
             it += 1
             print("######## - SINGLE RUN DONE")
         print(f"###### - SAMPLE {sample} DONE")
     print("#### - ALL ITERATIONS DONE")
-    print(f"Writing results csv to {cfg['output_folder']}")
-    if os.path.isfile(f"{cfg['output_folder']}/results.csv"):
-        previous_results = pd.read_csv(f"{cfg['output_folder']}/results.csv")
+    print(f"Writing results csv to {cfg['name']}")
+    if os.path.isfile(os.path.join("results", cfg['name'], "results.csv")):
+        previous_results = pd.read_csv(os.path.join("results", cfg['name'], "results.csv"))
         results_df = pd.concat([previous_results, results_df])
-    results_df.to_csv(f"{cfg['output_folder']}/results.csv", index=False)
+    results_df.to_csv(os.path.join("results", cfg['name'], "results.csv"), index=False)
     print("#### - EVERYTHING DONE")
 
 
 def _init_env(cfg: dict) -> (dict, pd.DataFrame):
     # Select GPUs
     os.environ["CUDA_VISIBLE_DEVICES"] = cfg["cuda_devices"]
-
-    cfg["output_folder"] = "results/" + cfg["name"]
 
     # Init results dataframe
     results_df = pd.DataFrame(

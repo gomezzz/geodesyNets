@@ -141,7 +141,7 @@ class EarlyStopping():
 
         if loss_value < self.minimal_loss:
             self.minimal_loss = loss_value
-            torch.save(model.state_dict(), self.save_folder + "best_model.mdl")
+            torch.save(model.state_dict(), os.path.join(self.save_folder, "best_model.mdl"))
             self._iterations_without_improvement = 0
         else:
             self._iterations_without_improvement += 1

@@ -51,7 +51,7 @@ def gaussian_noise(
 
 def constant_bias(
         label_fn: Callable[[Tensor], Tensor],
-        bias: Tensor = torch.Tensor([0, 1, 0])
+        bias: Tensor = torch.tensor([0, 1, 0])
 ) -> Callable[[Tensor], Tensor]:
     """Adds a constant bias noise to a label function.
 
@@ -64,6 +64,5 @@ def constant_bias(
 
     """
     if not torch.is_tensor(bias):
-        bias = torch.Tensor(bias)
-    return lambda points_tensor: \
-        label_fn(points_tensor) + bias
+        bias = torch.tensor(bias)
+    return lambda points_tensor: label_fn(points_tensor) + bias.to(points_tensor.get_device())

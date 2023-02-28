@@ -1,3 +1,5 @@
+import os.path
+
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
@@ -16,10 +18,10 @@ def save_results(loss_log, weighted_average_log, validation_results, model, fold
         folder (str): results folder of the run
     """
     print(f"Saving run results to {folder} ...", end="")
-    np.save(folder + "loss_log.npy", loss_log)
-    np.save(folder + "weighted_average_log.npy", loss_log)
-    torch.save(model.state_dict(), folder + "last_model.mdl")
-    validation_results.to_csv(folder + "validation_results.csv", index=False)
+    np.save(os.path.join(folder, "loss_log.npy"), loss_log)
+    np.save(os.path.join(folder, "weighted_average_log.npy"), loss_log)
+    torch.save(model.state_dict(), os.path.join(folder, "last_model.mdl"))
+    validation_results.to_csv(os.path.join(folder, "validation_results.csv"), index=False)
     print("Done.")
 
 
@@ -40,16 +42,16 @@ def save_plots(model, encoding, mascon_points, lr_log, loss_log, weighted_averag
     """
     print("Creating rejection plot...", end="")
     plot_model_rejection(model, encoding, views_2d=True,
-                         bw=True, N=N, alpha=0.1, s=50, save_path=folder + "rejection_plot_iter999999.png", c=c)
+                         bw=True, N=N, alpha=0.1, s=50, save_path=os.path.join(folder, "rejection_plot_iter999999.png"), c=c)
     print("Done.")
     print("Creating model_vs_mascon_rejection plot...", end="")
     plot_model_vs_mascon_rejection(
-        model, encoding, mascon_points, N=N, save_path=folder + "model_vs_mascon_rejection.png", c=c)
+        model, encoding, mascon_points, N=N, save_path=os.path.join(folder, "model_vs_mascon_rejection.png"), c=c)
     print("Done.")
 
     print("Creating model_vs_mascon_contours plot...", end="")
     plot_model_vs_mascon_contours(
-        model, encoding, mascon_points, N=N, save_path=folder + "contour_plot_iter999999.png", c=c)
+        model, encoding, mascon_points, N=N, save_path=os.path.join(folder, "contour_plot_iter999999.png"), c=c)
     print("Done.")
 
     print("Creating loss plots...", end="")
@@ -62,7 +64,7 @@ def save_plots(model, encoding, mascon_points, lr_log, loss_log, weighted_averag
     plt.ylabel("Loss")
     plt.legend(["Loss", "Weighted Average Loss",
                 "Vision Loss"])
-    plt.savefig(folder + "loss_plot.png", dpi=150)
+    plt.savefig(os.path.join(folder, "loss_plot.png"), dpi=150)
     print("Done.")
 
     print("Creating LR plot...")
@@ -71,7 +73,7 @@ def save_plots(model, encoding, mascon_points, lr_log, loss_log, weighted_averag
     plt.semilogy(abscissa, lr_log)
     plt.xlabel("Thousands of model evaluations")
     plt.ylabel("LR")
-    plt.savefig(folder + "lr_plot.png", dpi=150)
+    plt.savefig(os.path.join(folder, "lr_plot.png"), dpi=150)
 
 
 def save_plots_v2(model, encoding, sample, lr_log, loss_log, weighted_average_log, n_inferences,
@@ -89,8 +91,10 @@ def save_plots_v2(model, encoding, sample, lr_log, loss_log, weighted_average_lo
         folder (str): results folder of the run
     """
     print("Creating rejection plot...", end="")
-    plot_model_rejection(model, encoding, views_2d=True,
-                         bw=True, N=N, alpha=0.1, s=50, save_path=folder + "rejection_plot_iter999999.png", c=c)
+    plot_model_rejection(
+        model, encoding, views_2d=True,
+        bw=True, N=N, alpha=0.1, s=50, save_path=os.path.join(folder, "rejection_plot_iter999999.png"), c=c
+    )
     print("Done.")
     print("Creating acceleration plot...", end="")
     # plot_compare_acceleration(
@@ -110,7 +114,7 @@ def save_plots_v2(model, encoding, sample, lr_log, loss_log, weighted_average_lo
     plt.ylabel("Loss")
     plt.legend(["Loss", "Weighted Average Loss",
                 "Vision Loss"])
-    plt.savefig(folder + "loss_plot.png", dpi=150)
+    plt.savefig(os.path.join(folder, "loss_plot.png"), dpi=150)
     print("Done.")
 
     print("Creating LR plot...")
@@ -119,4 +123,4 @@ def save_plots_v2(model, encoding, sample, lr_log, loss_log, weighted_average_lo
     plt.semilogy(abscissa, lr_log)
     plt.xlabel("Thousands of model evaluations")
     plt.ylabel("LR")
-    plt.savefig(folder + "lr_plot.png", dpi=150)
+    plt.savefig(os.path.join(folder, "lr_plot.png"), dpi=150)
