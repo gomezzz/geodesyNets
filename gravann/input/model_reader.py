@@ -59,15 +59,15 @@ def _populate_model(model_stats: dict, config: dict) -> nn.Module:
         the populated model
 
     """
-    encoding = encodings.get_encoding(config["Encoding"])
-    activation = layers.get_activation_layer(config["Activation"])
+    encoding = encodings.get_encoding(config["encoding"])
+    activation = layers.get_activation_layer(config["activation"])
     model = network_initalizer.init_network(
         encoding,
-        model_type=config["Model"],
+        model_type=config["model_type"],
         activation=activation,
         n_neurons=config["n_neurons"],
         hidden_layers=config["hidden_layers"],
-        siren_omega=config.get("Omega", 30.0)  # Omega was not always saved, but it was always 30.0
+        siren_omega=config.get("omega", 30.0)  # Omega was not always saved, but it was always 30.0
     )
     model.load_state_dict(model_stats)
     return model
