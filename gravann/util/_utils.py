@@ -2,6 +2,7 @@ import gc
 import os
 import pickle as pk
 import warnings
+from typing import Dict, List
 
 import numpy as np
 import torch
@@ -152,3 +153,22 @@ class EarlyStopping():
             return True
         else:
             return False
+
+
+def deep_get(dictionary: Dict, keys: List[any], default_value: any = None) -> any:
+    """Tries multiple keys to find a specific value in a dictionary. If none of the keys exists, return default_value.
+
+    Args:
+        dictionary: the dictionary which supposing-ly contains one of keys
+        keys: list of keys to trie
+        default_value: the default value if none of the keys is contained
+
+    Returns:
+        value from the dictionary or default_value
+
+    """
+    for key in keys:
+        value = dictionary.get(key, None)
+        if value is not None:
+            return value
+    return default_value

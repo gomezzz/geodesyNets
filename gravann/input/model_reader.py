@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 
 from gravann.network import network_initalizer, encodings, layers
+from gravann.util import deep_get
 
 
 def read_models(root_directory: os.PathLike) -> List[Tuple[nn.Module, Dict]]:
@@ -59,11 +60,11 @@ def _populate_model(model_stats: dict, config: dict) -> nn.Module:
         the populated model
 
     """
-    encoding = encodings.get_encoding(config["encoding"])
-    activation = layers.get_activation_layer(config["activation"])
+    encoding = encodings.get_encoding(deep_get(config, ["Encoding", "encoding"]))
+    activation = layers.get_activation_layer(deep_get(config, ["Activation", "activation"]))
     model = network_initalizer.init_network(
         encoding,
-        model_type=config["model_type"],
+        model_type=deep_get(config, ["model_type", "Model"]),
         activation=activation,
         n_neurons=config["n_neurons"],
         hidden_layers=config["hidden_layers"],
