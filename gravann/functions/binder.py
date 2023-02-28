@@ -3,7 +3,7 @@ from typing import Callable, Union
 
 import torch
 
-import gravann.network.encodings
+from gravann.network.encodings import Encoding
 from . import integration, noise
 
 _INTEGRATION_METHOD_REGISTRY = {
@@ -14,7 +14,7 @@ _INTEGRATION_METHOD_REGISTRY = {
 
 def bind_integration(
         method: str, use_acc: bool, model,
-        encoding: gravann.network.encodings, **kwargs
+        encoding: Encoding, **kwargs
 ) -> Callable[[torch.Tensor], torch.Tensor]:
     """Binds arguments to a given integration function, so that it can be called by just inputting the tensor of points.
 

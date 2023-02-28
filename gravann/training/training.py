@@ -9,8 +9,9 @@ from tqdm import tqdm
 
 from gravann.functions import binder as function_binder
 from gravann.labels import binder as label_binder
+from gravann.network import layers, encodings
 from gravann.output import plot_model_rejection, plot_saver
-from . import training_initializer, validator
+from . import training_initializer, validator, losses
 from .losses import *
 
 
@@ -28,12 +29,15 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
 
     # Initialize the environment and prepare the run folder
     run_folder = training_initializer.init_environment(cfg)
+    encoding = encodings.get_encoding(cfg["encoding"])
+    activation = layers.get_activation_layer(cfg["activation"])
+    loss_fn = getattr(losses, cfg["loss"])
     # Initialize the model and associated torch training utility
     model, early_stopper, optimizer, scheduler = training_initializer.init_model_and_optimizer(
         run_folder=run_folder,
-        encoding=cfg["encoding"],
+        encoding=encoding,
         n_neurons=cfg["n_neurons"],
-        activation=cfg["activation"],
+        activation=activation,
         model_type=cfg["model_type"],
         omega=cfg["omega"],
         hidden_layers=cfg["hidden_layers"],
@@ -46,10 +50,10 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
     )
     # Initialize the prediction function by binding the model and defined configuration parameters
     prediction_fn = function_binder.bind_integration(
-        method='trapezoid',
+        method=cfg["integrator"],
         use_acc=cfg["use_acceleration"],
         model=model,
-        encoding=cfg["encoding"],
+        encoding=encoding,
         integration_points=cfg["integration_points"],
         integration_domain=cfg["integration_domain"],
     )
@@ -88,7 +92,7 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
             labels = label_fn(target_points)
 
         # Train
-        loss, c = _train_on_batch(target_points, prediction_fn, labels, cfg["loss_fn"], optimizer, scheduler)
+        loss, c = _train_on_batch(target_points, prediction_fn, labels, loss_fn, optimizer, scheduler)
 
         # Update the loss trend indicators
         weighted_average.append(loss.item())
@@ -137,29 +141,11 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
         n_inferences, run_folder, c, cfg["plotting_points"]
     )
 
-    # store run config
-    cfg_dict = {"Sample": cfg["sample"],
-                "Seed": cfg["seed"],
-                "Type": "ACC" if cfg["use_acceleration"] else "U",
-                "Model": cfg["model_type"],
-                "Loss": cfg["loss_fn"].__name__,
-                "Encoding": cfg["encoding"].name,
-                "Integrator": cfg["integrator"].__name__,
-                "Activation": str(cfg["activation"])[:-2],
-                "n_neurons": cfg["n_neurons"],
-                "hidden_layers": cfg["hidden_layers"],
-                "Batch Size": cfg["batch_size"],
-                "LR": cfg["learning_rate"],
-                "Ground Truth": cfg["ground_truth"],
-                "Noise Method": cfg["noise_method"],
-                "Noise Params": str(cfg["noise_params"]),
-                "Target Sampler Method": cfg["sample_method"],
-                "Target Sampler Domain": cfg["sample_domain"],
-                "Integration Points": cfg["integration_points"],
-                "c": c}
-
+    cfg.update({
+        "c": c
+    })
     with open(run_folder + 'config.pk', 'wb') as handle:
-        pk.dump(cfg_dict, handle)
+        pk.dump(cfg, handle)
 
     # Compute validation results
     val_res = validator.validation_results_unpack_df(validation_results)
@@ -170,12 +156,12 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
 
     result_dictionary = {"Sample": cfg["sample"],
                          "Seed": cfg["seed"],
-                         "Type": "ACC" if cfg["use_acceleration"] else "U",
+                         "Type": cfg["use_acceleration"],
                          "Model": cfg["model_type"],
-                         "Loss": cfg["loss_fn"].__name__,
+                         "Loss": cfg["loss"],
                          "Encoding": cfg["encoding"].name,
-                         "Integrator": cfg["integrator"].__name__,
-                         "Activation": str(cfg["activation"])[:-2],
+                         "Integrator": cfg["integrator"],
+                         "Activation": cfg["activation"],
                          "Batch Size": cfg["batch_size"],
                          "LR": cfg["learning_rate"],
                          "Ground Truth": cfg["ground_truth"],
