@@ -34,12 +34,21 @@ def run(
 
     """
     results_df = pd.DataFrame()
+    print("##Loading models...")
     all_models = model_reader.read_models(input_directory)
+    total_number = len(all_models)
+    print(f"##Loaded {total_number} models")
     for it, (model, config) in enumerate(all_models):
         # Read
+        print(f"#### Starting with re-validation {it + 1}/{total_number}")
         encoding = encodings.get_encoding(deep_get(config, ["Encoding", "encoding"]))
         sample = deep_get(config, ["Sample", "sample"])
         use_acc = deep_get(config, ["use_acc", "Type"], True)
+        # The format changed between the different runs, string is legacy format, simple boolean is new format
+        if isinstance(use_acc, str) and use_acc == "ACC":
+            use_acc = True
+        elif isinstance(use_acc, str) and use_acc == "U":
+            use_acc = False
 
         # Validate
         validation_results = validator.validate(
