@@ -5,7 +5,7 @@ import pandas as pd
 from gravann.input import model_reader
 from gravann.network import encodings
 from gravann.training import validator
-from gravann.util import deep_get
+from gravann.util import deep_get, enableCUDA
 
 
 def run(
@@ -33,6 +33,11 @@ def run(
         pandas DataFrame containing the validation results
 
     """
+    # Cuda Init
+    os.environ["CUDA_VISIBLE_DEVICES"] = kwargs.get("cuda_devices", "0")
+    enableCUDA()
+
+    # Start validation
     results_df = pd.DataFrame()
     print("##Loading models...")
     all_models = model_reader.read_models(input_directory)
