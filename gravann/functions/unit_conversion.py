@@ -3,7 +3,8 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-from numpy.typing import ArrayLike
+import torch
+from numpy._typing import ArrayLike
 
 CONVERSION_FACTORS = {
     "bennu": (352.1486930549145, 7.329e10 * 6.67430e-11 / 352.1486930549145 ** 2),
@@ -67,19 +68,39 @@ def convert_pandas_altitudes(
     return result_df
 
 
-def convert_altitude(sample: str, altitudes: ArrayLike) -> ArrayLike:
+def convert_altitude(sample: str, altitudes: ArrayLike, forward: bool = True) -> ArrayLike:
     """Converts the unitless altitudes of an ArrayLike to metric.
 
     Args:
         sample: the sample
         altitudes: the altitudes to convert
+        forward: if true (default) does the above, otherwise the function converts from meter to unitless
 
     Returns:
         the converted altitudes in meter [m]
 
     """
     try:
-        conversion_constant, _ = CONVERSION_FACTORS[altitudes]
-        return altitudes * conversion_constant
+        conversion_constant, _ = CONVERSION_FACTORS[sample]
+        return altitudes * conversion_constant if forward else altitudes / conversion_constant
+    except KeyError:
+        raise NotImplementedError(f"The requested sample {sample} does not yet have a conversion factor!")
+
+
+def convert_acceleration(sample: str, acceleration: torch.Tensor, forward: bool = True) -> torch.Tensor:
+    """Converts the given unitless accelerations to SI units [m/s^2].
+
+    Args:
+        sample: the sample body's name
+        acceleration: the accelerations to converts (cartesian vector)
+        forward: if true (default) does the above, otherwise the function converts from meter to unitless
+
+    Returns:
+        the converted acceleration in [m/s^2]
+
+    """
+    try:
+        _, conversion_constant = CONVERSION_FACTORS[sample]
+        return acceleration * conversion_constant if forward else acceleration / conversion_constant
     except KeyError:
         raise NotImplementedError(f"The requested sample {sample} does not yet have a conversion factor!")
