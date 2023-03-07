@@ -8,6 +8,12 @@ GRAVITY_CONSTANT = 6.67430e-11
 GRAVITY_CONSTANT_INVERSE = 1.0 / GRAVITY_CONSTANT
 """ The inverse of the GRAVITY CONSTANT G """
 
+SOLAR_CONSTANT = 1361.0
+"""The solar constant in [W/m^2]"""
+
+SPEED_OF_LIGHT = 299792458.0
+"""The speed of light in [m/s}"""
+
 BODY_MASS = {
     "bennu": 7.329e10,
     "churyumov-gerasimenko": 9.982e12,
@@ -17,6 +23,14 @@ BODY_MASS = {
     "hollow": 9.982e12,
 }
 """Contains the mass in [kg] for each body"""
+
+BODY_SEMI_MAJOR_AXIS = {
+    "bennu": 1.126,
+    "churyumov-gerasimenko": 3.4628,
+    "eros": 1.458,
+    "itokawa": 1.324
+}
+"""Contains the bodies semi-major axis in [AU]"""
 
 BODY_METRIC = {
     "bennu": 352.1486930549145,
