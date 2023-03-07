@@ -1,3 +1,4 @@
+from . import constants
 from ._hulls import alpha_shape, ray_triangle_intersect, rays_triangle_intersect, is_outside, is_inside, \
     is_outside_torch
 from ._mesh_conversion import create_mesh_from_cloud, create_mesh_from_model

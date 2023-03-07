@@ -1,11 +1,5 @@
 import numpy as np
 
-""" The GRAVITY CONSTANT G [N * m^2 * kg^-2]"""
-GRAVITY_CONSTANT = 6.67430e-11
-
-""" The inverse of the GRAVITY CONSTANT G """
-GRAVITY_CONSTANT_INVERSE = 1.0 / GRAVITY_CONSTANT
-
 
 def calculate_volume(vertices: np.ndarray, faces: np.ndarray) -> float:
     """

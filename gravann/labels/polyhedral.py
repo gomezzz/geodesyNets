@@ -1,7 +1,8 @@
 import polyhedral_gravity
 import torch
 
-from ._polyhedral_utils import GRAVITY_CONSTANT_INVERSE, calculate_density
+from gravann.util.constants import GRAVITY_CONSTANT_INVERSE
+from ._polyhedral_utils import calculate_density
 
 
 def potential(target_points, mesh_vertices, mesh_faces, density=None):

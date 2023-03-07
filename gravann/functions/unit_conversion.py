@@ -4,21 +4,9 @@ from typing import List
 import numpy as np
 import pandas as pd
 import torch
-from numpy._typing import ArrayLike
+from numpy.typing import ArrayLike
 
-CONVERSION_FACTORS = {
-    "bennu": (352.1486930549145, 7.329e10 * 6.67430e-11 / 352.1486930549145 ** 2),
-    "bennu_nu": (352.1486930549145, 7.329e10 * 6.67430e-11 / 352.1486930549145 ** 2),
-    "churyumov-gerasimenko": (3126.6064453124995, 9.982e12 * 6.67430e-11 / 3126.6064453124995 ** 2),
-    "eros": (20413.864850997925, 6.687e15 * 6.67430e-11 / 20413.864850997925 ** 2),
-    "itokawa": (350.438691675663, 3.51e10 * 6.67430e-11 / 350.438691675663 ** 2),
-    "itokawa_nu": (350.438691675663, 3.51e10 * 6.67430e-11 / 350.438691675663 ** 2),
-    "torus": (3126.6064453124995, 9.982e12 * 6.67430e-11 / 3126.6064453124995 ** 2),
-    "hollow": (3126.6064453124995, 9.982e12 * 6.67430e-11 / 3126.6064453124995 ** 2),
-    "hollow_nu": (3126.6064453124995, 9.982e12 * 6.67430e-11 / 3126.6064453124995 ** 2),
-    "hollow2": (3126.6064453124995, 9.982e12 * 6.67430e-11 / 3126.6064453124995 ** 2),
-    "hollow2_nu": (3126.6064453124995, 9.982e12 * 6.67430e-11 / 3126.6064453124995 ** 2)
-}
+from gravann.util.constants import UNITLESS_TO_ACCELERATION, UNITLESS_TO_METER
 
 
 def convert_pandas_altitudes(
@@ -45,7 +33,9 @@ def convert_pandas_altitudes(
         result_df.rename(columns={"Target Sampler Domain": "sample_domain"}, inplace=True)
 
     # Iterate over all possible samples
-    for sample_name, (altitude2metric, value2metric) in CONVERSION_FACTORS.items():
+    for sample_name in UNITLESS_TO_METER.keys():
+        altitude2metric = UNITLESS_TO_METER[sample_name]
+        value2metric = UNITLESS_TO_ACCELERATION[sample_name]
         # First adapt validation results
         for column in [x for x in result_df.columns if x.lower().startswith(("Normalized L1 Loss", "RMSE", "relRMSE"))]:
             result_df.loc[result_df["sample"] == sample_name, column] *= value2metric
@@ -81,7 +71,7 @@ def convert_altitude(sample: str, altitudes: ArrayLike, forward: bool = True) ->
 
     """
     try:
-        conversion_constant, _ = CONVERSION_FACTORS[sample]
+        conversion_constant = UNITLESS_TO_METER[sample]
         return altitudes * conversion_constant if forward else altitudes / conversion_constant
     except KeyError:
         raise NotImplementedError(f"The requested sample {sample} does not yet have a conversion factor!")
@@ -100,7 +90,7 @@ def convert_acceleration(sample: str, acceleration: torch.Tensor, forward: bool 
 
     """
     try:
-        _, conversion_constant = CONVERSION_FACTORS[sample]
+        conversion_constant = UNITLESS_TO_ACCELERATION[sample]
         return acceleration * conversion_constant if forward else acceleration / conversion_constant
     except KeyError:
         raise NotImplementedError(f"The requested sample {sample} does not yet have a conversion factor!")
