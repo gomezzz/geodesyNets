@@ -9,8 +9,7 @@ ground_truth = [
     "mascon"
 ]
 samples = [
-    "churyumov-gerasimenko",
-    "eros"
+    "churyumov-gerasimenko"
 ]
 noise = [
     [""],
