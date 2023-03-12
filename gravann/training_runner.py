@@ -11,7 +11,9 @@ from gravann.util import get_asteroid_bounding_box, enableCUDA
 def run(cfg: dict) -> None:
     """This function runs all the permutations of above settings
     """
-    cfg, results_df = _init_env(cfg)
+    os.environ["CUDA_VISIBLE_DEVICES"] = cfg["cuda_devices"]
+    results_df = pd.DataFrame()
+
     enableCUDA()
     print("Using the following samples:", cfg["samples"])
     print("Will use device ", os.environ["TORCH_DEVICE"])
@@ -19,7 +21,7 @@ def run(cfg: dict) -> None:
     iterable_parameters = [
         cfg["seed"],
         cfg["ground_truth"],
-        cfg["noise_method"],
+        cfg["noise"],
         cfg["training"]["loss"],
         cfg["training"]["batch_size"],
         cfg["training"]["learning_rate"],
@@ -42,7 +44,7 @@ def run(cfg: dict) -> None:
         if cfg["integration"]["limit_domain"]:
             cfg["integration"]["domain"] = get_asteroid_bounding_box(asteroid_pk_path=f"3dmeshes/{sample}.pk")
         for (
-                seed, ground_truth, noise_method,
+                seed, ground_truth, noise,
                 loss, batch_size, learning_rate,
                 encoding, activation, hidden_layers, n_neurons,
                 omega,
@@ -93,8 +95,7 @@ def run(cfg: dict) -> None:
                 ########################################################################################################
                 # Noise Configuration
                 ########################################################################################################
-                "noise_method": noise_method,
-                "noise_params": cfg.get("noise_params", {}),
+                "noise": noise,
                 ########################################################################################################
                 # Integration Configuration
                 ########################################################################################################
@@ -114,16 +115,3 @@ def run(cfg: dict) -> None:
         results_df = pd.concat([previous_results, results_df])
     results_df.to_csv(os.path.join("results", cfg['name'], "results.csv"), index=False)
     print("#### - EVERYTHING DONE")
-
-
-def _init_env(cfg: dict) -> (dict, pd.DataFrame):
-    # Select GPUs
-    os.environ["CUDA_VISIBLE_DEVICES"] = cfg["cuda_devices"]
-
-    # Init results dataframe
-    results_df = pd.DataFrame(
-        columns=["Sample", "Type", "Model", "Loss", "Encoding", "Integrator", "Activation", "Batch Size", "LR",
-                 "Ground Truth", "Target Sampler", "Noise", "Integration Points", "Final Loss",
-                 "Final WeightedAvg Loss"])
-
-    return cfg, results_df

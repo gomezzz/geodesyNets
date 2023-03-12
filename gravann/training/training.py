@@ -25,9 +25,6 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
     Returns:
         results
     """
-    # Time Measurement
-    start_time = time.time()
-
     # Initialize the environment and prepare the run folder
     run_folder = training_initializer.init_environment(cfg)
     encoding = encodings.get_encoding(cfg["encoding"])
@@ -66,9 +63,9 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
     )
     # Add noise on top (if defined)
     label_fn = function_binder.bind_noise(
-        method=cfg["noise_method"],
+        method=cfg["noise"][0],
         label_fn=label_fn,
-        kwargs=cfg["noise_params"]
+        *cfg["noise"][1:]
     )
 
     # When a new network is created: init empty training logs and loss trend indicators
@@ -80,13 +77,6 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
     # At the beginning (first plots) we assume no learned c
     c = 1.
     for it in t:
-        if it % 500 == 0:
-            plot_model_rejection(
-                model, encoding=encoding,
-                views_2d=True, bw=True, N=cfg["plotting_points"], alpha=0.1, s=50, c=c,
-                save_path=os.path.join(run_folder, f"rejection_plot_iter{it}.png")
-            )
-            plt.close('all')
         # Each ten epochs we resample the target points
         if it % 10 == 0:
             target_points = target_points_sampler()
@@ -151,30 +141,7 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
     # Compute validation results
     val_res = validator.validation_results_unpack_df(validation_results)
 
-    # Time Measurements
-    end_time = time.time()
-    runtime = end_time - start_time
-
-    result_dictionary = {"Sample": cfg["sample"],
-                         "Seed": cfg["seed"],
-                         "Type": cfg["use_acceleration"],
-                         "Model": cfg["model_type"],
-                         "Loss": cfg["loss"],
-                         "Encoding": cfg["encoding"],
-                         "Integrator": cfg["integrator"],
-                         "Activation": cfg["activation"],
-                         "Batch Size": cfg["batch_size"],
-                         "LR": cfg["learning_rate"],
-                         "Ground Truth": cfg["ground_truth"],
-                         "Target Sampler Method": cfg["sample_method"],
-                         "Target Sampler Domain": cfg["sample_domain"],
-                         "Noise Method": cfg["noise_method"],
-                         "Noise Params": str(cfg["noise_params"]),
-                         "Integration Points": cfg["integration_points"],
-                         "Runtime": runtime,
-                         "Final Loss": loss_log[-1],
-                         "Final WeightedAvg Loss": weighted_average_log[-1]}
-    results_df = pd.concat([pd.DataFrame([result_dictionary]), val_res], axis=1)
+    results_df = pd.concat([pd.DataFrame([cfg]), val_res], axis=1)
     return results_df
 
 
