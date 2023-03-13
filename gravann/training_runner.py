@@ -1,6 +1,8 @@
 import functools
 import itertools
 import os
+import sys
+from typing import Callable, Optional
 
 import pandas as pd
 
@@ -8,7 +10,7 @@ from gravann.training import training as trainer
 from gravann.util import get_asteroid_bounding_box, enableCUDA
 
 
-def run(cfg: dict) -> None:
+def run(cfg: dict, stop_running: Optional[Callable[[], bool]] = None) -> None:
     """This function runs all the permutations of above settings
     """
     os.environ["CUDA_VISIBLE_DEVICES"] = cfg["cuda_devices"]
@@ -109,6 +111,9 @@ def run(cfg: dict) -> None:
             results_df = results_df.append(run_results, ignore_index=True)
             results_df.to_csv(csv_checkpoint_path, index=False)
             print("######## - SINGLE RUN DONE")
+            if stop_running is not None and stop_running():
+                print("Requested to stop earlier")
+                sys.exit(0)
         print(f"###### - SAMPLE {sample} DONE")
     print("#### - ALL ITERATIONS DONE")
     print(f"Writing results csv to {cfg['name']}")
