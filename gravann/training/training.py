@@ -63,8 +63,8 @@ def run_training_configuration(cfg: dict) -> pd.DataFrame:
     )
     # Add noise on top (if defined)
     label_fn = function_binder.bind_noise(
-        method=cfg["noise"][0],
-        label_fn=label_fn,
+        cfg["noise"][0],
+        label_fn,
         *cfg["noise"][1:]
     )
 
