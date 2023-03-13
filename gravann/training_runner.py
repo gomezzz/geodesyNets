@@ -34,8 +34,6 @@ def run(cfg: dict) -> None:
         cfg["target_sampling"]["domain"]
     ]
 
-    it: int = 0
-
     combi = functools.reduce(lambda x, y: x * y, map(lambda x: len(x), iterable_parameters)) * len(cfg["samples"])
     print(f"#### - TOTAL AMOUNT OF ITERATIONS {combi}")
 
@@ -43,14 +41,19 @@ def run(cfg: dict) -> None:
         print(f"###### - SAMPLE START {sample}")
         if cfg["integration"]["limit_domain"]:
             cfg["integration"]["domain"] = get_asteroid_bounding_box(asteroid_pk_path=f"3dmeshes/{sample}.pk")
-        for (
+        for it, (
                 seed, ground_truth, noise,
                 loss, batch_size, learning_rate,
                 encoding, activation, hidden_layers, n_neurons,
                 omega,
                 sample_method, sample_domain,
-        ) in itertools.product(*iterable_parameters):
+        ) in enumerate(itertools.product(*iterable_parameters)):
             print("######## - SINGLE RUN START")
+            csv_checkpoint_path = os.path.join("results", cfg['name'], f"results_checkpoint_{it:04d}.csv")
+            if os.path.exists(csv_checkpoint_path):
+                results_df = pd.read_csv(csv_checkpoint_path)
+                print("######## - LOADED RUN FROM CHECKPOINT")
+                continue
             run_results = trainer.run_training_configuration({
                 ########################################################################################################
                 # Name of the sample and other administrative stuff like the chosen seed
@@ -104,8 +107,7 @@ def run(cfg: dict) -> None:
                 "integration_domain": cfg["integration"]["domain"]
             })
             results_df = results_df.append(run_results, ignore_index=True)
-            results_df.to_csv(os.path.join("results", cfg['name'], f"results_checkpoint_{it:04d}.csv"), index=False)
-            it += 1
+            results_df.to_csv(csv_checkpoint_path, index=False)
             print("######## - SINGLE RUN DONE")
         print(f"###### - SAMPLE {sample} DONE")
     print("#### - ALL ITERATIONS DONE")
