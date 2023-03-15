@@ -37,10 +37,9 @@ def bind_label(method: str, use_acc: bool = True, **kwargs) -> Callable[[torch.T
     sample = kwargs.get("sample", None)
     if method == 'mascon':
         if sample is not None:
-            mascon_points, mascon_masses, mascon_masses_nu = sample_reader.load_sample(sample, use_acc)
+            mascon_points, mascon_masses = sample_reader.load_mascon_data(sample)
         else:
-            mascon_points, mascon_masses, mascon_masses_nu = kwargs.get("mascon_points", None), kwargs.get(
-                "mascon_masses", None), kwargs.get("mascon_masses_nu", None)
+            mascon_points, mascon_masses = kwargs.get("mascon_points", None), kwargs.get("mascon_masses", None)
         return lambda points: _METHOD_REGISTRY[(method, use_acc)](points, mascon_points, mascon_masses)
     elif method == 'polyhedral':
         if sample is not None:
