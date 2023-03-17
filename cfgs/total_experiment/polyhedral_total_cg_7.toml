@@ -1,5 +1,5 @@
 name = "polyhedral-total-seed-433"
-cuda_devices = "7"
+cuda_devices = "1"
 plotting_points = 2500
 seed = [
     433
