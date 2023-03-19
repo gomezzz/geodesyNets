@@ -18,5 +18,6 @@ if __name__ == "__main__":
         N=1000,
         sampling_altitudes=[0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 50.0],
         integration_points=50000,
-        cuda_devices=cuda_devices
+        cuda_devices=cuda_devices,
+        # with_constant_noise=True
     )

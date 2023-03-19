@@ -34,12 +34,15 @@ def validate(model, encoding, sample, ground_truth, use_acc=True, **kwargs):
         batch_size (int, optional): batch size (will split N in batches). Defaults to 32.
         russell_points (int , optional): how many points should be sampled per altitude for russel style radial projection sampling. Defaults to 3.
         progressbar (bool, optional): Display a progress. Defaults to True.
+        noise (list) if given then the noise is added on the ground truth for validation
 
     Returns:
         pandas dataframe: Results as df
 
     """
     label_function = label_binder.bind_label(ground_truth, use_acc, sample=sample, **kwargs)
+    if noise_cfg := kwargs.get("noise", None):
+        label_function = function_binder.bind_noise(noise_cfg[0], label_function, noise_cfg[1:])
     prediction_function = function_binder.bind_integration('trapezoid', use_acc, model, encoding, **kwargs)
     return _validation(label_function, prediction_function, sample, **kwargs)
 

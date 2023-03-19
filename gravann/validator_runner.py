@@ -27,6 +27,7 @@ def run(
         integration_points (int, optional): Number of integrations points to use. Defaults to 500000.
         N (int, optional): Number of evaluations per altitude. Defaults to 5000.
         sampling_altitudes (np.array, optional): Altitude to sample at for validation. Defaults to [0.05, 0.1, 0.25].
+        with_constant_noise (bool): include noise in the ground truth for constant bias validation
         ...
 
     Returns:
@@ -55,10 +56,16 @@ def run(
         elif isinstance(use_acc, str) and use_acc == "U":
             use_acc = False
 
+        # If with_noise is given and set to True + the noise includes a constant bias
+        noise_config = None
+        if kwargs.get("with_constant_noise", False) and config["noise"][0] != 'gaussian':
+            noise_config = config["noise"]
+
         # Validate
         validation_results = validator.validate(
             model, encoding, sample, ground_truth, use_acc,
             progressbar=False,
+            noise=noise_config,
             **kwargs
         )
 
