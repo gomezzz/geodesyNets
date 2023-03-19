@@ -10,10 +10,10 @@ from gravann.training import training as trainer
 from gravann.util import get_asteroid_bounding_box, enableCUDA
 
 
-def run(cfg: dict, stop_running: Optional[Callable[[], bool]] = None) -> None:
+def run(cfg: dict, stop_running: Optional[Callable[[], bool]] = None, cuda_device: str = "0") -> None:
     """This function runs all the permutations of above settings
     """
-    os.environ["CUDA_VISIBLE_DEVICES"] = cfg["cuda_devices"]
+    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_device
     results_df = pd.DataFrame()
 
     enableCUDA()

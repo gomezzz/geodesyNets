@@ -23,4 +23,5 @@ if __name__ == "__main__":
     with open(sys.argv[1], "rb") as config_file:
         cfg = tomli.load(config_file)
     print("INPUT LOADED")
-    training_runner.run(cfg, lambda: is_stop)
+    cuda_devices = sys.argv[2] if len(sys.argv) > 2 else cfg["cuda_devices"]
+    training_runner.run(cfg, lambda: is_stop, cuda_devices)
