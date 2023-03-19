@@ -1,9 +1,8 @@
 import os
 import pickle as pk
-import time
 from collections import deque
+from typing import Dict
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -11,12 +10,12 @@ from tqdm import tqdm
 from gravann.functions import binder as function_binder
 from gravann.labels import binder as label_binder
 from gravann.network import layers, encodings
-from gravann.output import plot_model_rejection, plot_saver
+from gravann.output import plot_saver
 from . import training_initializer, validator, losses
 from .losses import *
 
 
-def run_training_configuration(cfg: dict) -> pd.DataFrame:
+def run_training_configuration(cfg: Dict) -> pd.DataFrame:
     """Runs a specific parameter configuration.
 
     Args:

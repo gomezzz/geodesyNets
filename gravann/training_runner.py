@@ -2,7 +2,7 @@ import functools
 import itertools
 import os
 import sys
-from typing import Callable, Optional
+from typing import Callable, Optional, Dict
 
 import pandas as pd
 
@@ -10,7 +10,7 @@ from gravann.training import training as trainer
 from gravann.util import get_asteroid_bounding_box, enableCUDA
 
 
-def run(cfg: dict, stop_running: Optional[Callable[[], bool]] = None, cuda_device: str = "0") -> None:
+def run(cfg: Dict, stop_running: Optional[Callable[[], bool]] = None, cuda_device: str = "0") -> None:
     """This function runs all the permutations of above settings
     """
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_device
