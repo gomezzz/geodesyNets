@@ -42,7 +42,7 @@ def run_training_configuration(cfg: Dict, pretrained_model: Optional[os.PathLike
         learning_rate=cfg["learning_rate"]
     )
     # Start with a pretrained model if a path is given
-    if pretrained_model:
+    if pretrained_model is not None:
         model.load_state_dict(torch.load(pretrained_model))
     # Initialize the target point sampler
     target_points_sampler = training_initializer.init_training_sampler(
