@@ -1,7 +1,7 @@
 import os
 import pickle as pk
 from collections import deque
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -15,11 +15,12 @@ from . import training_initializer, validator, losses
 from .losses import *
 
 
-def run_training_configuration(cfg: Dict) -> pd.DataFrame:
+def run_training_configuration(cfg: Dict, pretrained_model: Optional[os.PathLike] = None) -> pd.DataFrame:
     """Runs a specific parameter configuration.
 
     Args:
         cfg: dictionary with the configuration for the training run
+        pretrained_model: path to a pretrained model to load the config from
 
     Returns:
         results
@@ -40,6 +41,9 @@ def run_training_configuration(cfg: Dict) -> pd.DataFrame:
         hidden_layers=cfg["hidden_layers"],
         learning_rate=cfg["learning_rate"]
     )
+    # Start with a pretrained model if a path is given
+    if pretrained_model:
+        model.load_state_dict(torch.load(pretrained_model))
     # Initialize the target point sampler
     target_points_sampler = training_initializer.init_training_sampler(
         sample=cfg["sample"], target_sample_method=cfg["sample_method"],
