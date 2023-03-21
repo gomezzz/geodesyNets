@@ -58,21 +58,27 @@ def convert_pandas_altitudes(
     return result_df
 
 
-def convert_altitude(sample: str, altitudes: ArrayLike, forward: bool = True) -> ArrayLike:
+def convert_altitude(sample: str, altitudes: ArrayLike, forward: bool = True, unit: str = 'm') -> ArrayLike:
     """Converts the unitless altitudes of an ArrayLike to metric.
 
     Args:
         sample: the sample
         altitudes: the altitudes to convert
+        unit: defaults to [m] meter, kilometre also possible [km]
         forward: if true (default) does the above, otherwise the function converts from meter to unitless
 
     Returns:
-        the converted altitudes in meter [m]
+        the converted altitudes in meter [m] or [km] depending on unit
 
     """
+    units = {
+        'm': 1.0,
+        'km': 1000.0
+    }
     try:
         conversion_constant = UNITLESS_TO_METER[sample]
-        return altitudes * conversion_constant if forward else altitudes / conversion_constant
+        return altitudes * conversion_constant / units[unit] if forward \
+            else (altitudes * units[unit]) / conversion_constant
     except KeyError:
         raise NotImplementedError(f"The requested sample {sample} does not yet have a conversion factor!")
 
