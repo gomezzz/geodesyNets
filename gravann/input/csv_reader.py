@@ -28,5 +28,5 @@ def read_result_csv(
             path = os.path.join(dir_path, filename)
             if any(x in path for x in include) and not any(x in path for x in exclude):
                 element = pd.read_csv(path)
-                dataframe = pd.concat([dataframe, element])
+                dataframe = pd.concat([dataframe, element], ignore_index=True)
     return dataframe
