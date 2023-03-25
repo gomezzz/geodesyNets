@@ -22,6 +22,7 @@ def run(cfg: Dict, stop_running: Optional[Callable[[], bool]] = None, cuda_devic
 
     iterable_parameters = [
         cfg["seed"],
+        cfg.get("pretrained_model", [""]),
         cfg["ground_truth"],
         cfg["noise"],
         cfg["training"]["loss"],
@@ -44,7 +45,7 @@ def run(cfg: Dict, stop_running: Optional[Callable[[], bool]] = None, cuda_devic
         if cfg["integration"]["limit_domain"]:
             cfg["integration"]["domain"] = get_asteroid_bounding_box(asteroid_pk_path=f"3dmeshes/{sample}.pk")
         for it, (
-                seed, ground_truth, noise,
+                seed, pretrained_model, ground_truth, noise,
                 loss, batch_size, learning_rate,
                 encoding, activation, hidden_layers, n_neurons,
                 omega,
@@ -61,6 +62,7 @@ def run(cfg: Dict, stop_running: Optional[Callable[[], bool]] = None, cuda_devic
                 # Name of the sample and other administrative stuff like the chosen seed
                 ########################################################################################################
                 "sample": sample,
+                "pretrained_model": pretrained_model,
                 "output_folder": f"{os.path.join('results', cfg['name'])}",
                 "run_id": it,
                 "plotting_points": cfg["plotting_points"],
@@ -69,6 +71,7 @@ def run(cfg: Dict, stop_running: Optional[Callable[[], bool]] = None, cuda_devic
                 # Chosen Ground Truth
                 ########################################################################################################
                 "ground_truth": ground_truth,
+                "low_resolution": cfg.get("low_resolution", False),
                 ########################################################################################################
                 # Training configuration & Validation Configuration
                 ########################################################################################################
