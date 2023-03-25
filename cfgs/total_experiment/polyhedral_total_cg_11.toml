@@ -12,8 +12,9 @@ samples = [
     "churyumov-gerasimenko"
 ]
 noise = [
-    ["adaptive_gaussian_noise", 0.0, 0.1],
-    ["adaptive_gaussian_noise", 0.0, 0.01]
+    ["adaptive_gaussian_noise", 0.1],
+    ["adaptive_gaussian_noise", 0.01],
+    ["adaptive_gaussian_noise", 0.001]
 ]
 [model]
 activation = [
