@@ -11,7 +11,7 @@ from gravann.functions import binder as function_binder
 from gravann.labels import binder as label_binder
 from gravann.network import layers, encodings
 from gravann.output import plot_saver
-from . import training_initializer, losses
+from . import training_initializer, losses, validator
 from .losses import *
 
 
@@ -118,17 +118,17 @@ def run_training_configuration(cfg: Dict) -> pd.DataFrame:
         "sampling_altitudes": cfg["validation_sampling_altitudes"],
         "integration_points": 50000
     }
-    # validation_results = validator.validate(
-    #     model,
-    #     encoding,
-    #     cfg["sample"],
-    #     cfg["validation_ground_truth"],
-    #     cfg.get("use_acceleration", True),
-    #     **validation_kwargs
-    # )
+    validation_results = validator.validate(
+        model,
+        encoding,
+        cfg["sample"],
+        cfg["validation_ground_truth"],
+        cfg.get("use_acceleration", True),
+        **validation_kwargs
+    )
 
     print("Saving...")
-    # plot_saver.save_results(loss_log, weighted_average_log, validation_results, model, run_folder)
+    plot_saver.save_results(loss_log, weighted_average_log, validation_results, model, run_folder)
 
     plot_saver.save_plots_v2(
         model, encoding, cfg["sample"],
@@ -143,9 +143,9 @@ def run_training_configuration(cfg: Dict) -> pd.DataFrame:
         pk.dump(cfg, handle)
 
     # Compute validation results
-    # val_res = validator.validation_results_unpack_df(validation_results)
+    val_res = validator.validation_results_unpack_df(validation_results)
 
-    results_df = pd.concat([pd.DataFrame([cfg])], axis=1)
+    results_df = pd.concat([pd.DataFrame([cfg]), val_res], axis=1)
     return results_df
 
 
