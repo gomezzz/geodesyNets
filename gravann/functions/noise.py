@@ -26,7 +26,6 @@ def gaussian_noise(
 
 def adaptive_gaussian_noise(
         label_fn: Callable[[Tensor], Tensor],
-        mean: float = 0.0,
         std: float = 1.0
 ) -> Callable[[Tensor], Tensor]:
     """Adds adaptive Gaussian noise to a label function. The std is multiplied with the input_points to be in the
@@ -35,7 +34,6 @@ def adaptive_gaussian_noise(
 
     Args:
         label_fn: function taking a tensor and producing the labels, the base function on which the noise is added
-        mean: mean value of the relative gaussian
         std: std value of the relative gaussian
 
     Returns:
@@ -43,7 +41,7 @@ def adaptive_gaussian_noise(
 
     """
     return lambda points_tensor: \
-        label_fn(points_tensor) + torch.distributions.Normal(mean, std).sample(points_tensor.shape) * points_tensor
+        torch.distributions.Normal(1.0, std).sample(points_tensor.shape) * label_fn(points_tensor)
 
 
 def constant_bias(
