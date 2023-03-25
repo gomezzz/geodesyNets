@@ -11,7 +11,7 @@ from gravann.functions import binder as function_binder
 from gravann.labels import binder as label_binder
 from gravann.network import layers, encodings
 from gravann.output import plot_saver
-from . import training_initializer, validator, losses
+from . import training_initializer, losses
 from .losses import *
 
 
@@ -41,8 +41,9 @@ def run_training_configuration(cfg: Dict) -> pd.DataFrame:
         learning_rate=cfg["learning_rate"]
     )
     # Start with a pretrained model if a path is given
-    if pretrained_model := cfg.get("pretrained_model", "") != "":
+    if pretrained_model := cfg.get("pretrained_model", ""):
         model.load_state_dict(torch.load(pretrained_model))
+        print(f"Loaded existing model from {pretrained_model}")
     # Initialize the target point sampler
     target_points_sampler = training_initializer.init_training_sampler(
         sample=cfg["sample"], target_sample_method=cfg["sample_method"],
@@ -117,17 +118,17 @@ def run_training_configuration(cfg: Dict) -> pd.DataFrame:
         "sampling_altitudes": cfg["validation_sampling_altitudes"],
         "integration_points": 50000
     }
-    validation_results = validator.validate(
-        model,
-        encoding,
-        cfg["sample"],
-        cfg["validation_ground_truth"],
-        cfg.get("use_acceleration", True),
-        **validation_kwargs
-    )
+    # validation_results = validator.validate(
+    #     model,
+    #     encoding,
+    #     cfg["sample"],
+    #     cfg["validation_ground_truth"],
+    #     cfg.get("use_acceleration", True),
+    #     **validation_kwargs
+    # )
 
     print("Saving...")
-    plot_saver.save_results(loss_log, weighted_average_log, validation_results, model, run_folder)
+    # plot_saver.save_results(loss_log, weighted_average_log, validation_results, model, run_folder)
 
     plot_saver.save_plots_v2(
         model, encoding, cfg["sample"],
@@ -142,9 +143,9 @@ def run_training_configuration(cfg: Dict) -> pd.DataFrame:
         pk.dump(cfg, handle)
 
     # Compute validation results
-    val_res = validator.validation_results_unpack_df(validation_results)
+    # val_res = validator.validation_results_unpack_df(validation_results)
 
-    results_df = pd.concat([pd.DataFrame([cfg]), val_res], axis=1)
+    results_df = pd.concat([pd.DataFrame([cfg])], axis=1)
     return results_df
 
 

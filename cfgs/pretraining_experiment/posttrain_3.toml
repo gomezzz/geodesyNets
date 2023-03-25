@@ -1,4 +1,4 @@
-name = "posttrain-0"
+name = "posttrain-3"
 cuda_devices = "0"
 plotting_points = 2500
 low_resolution = false
@@ -15,7 +15,7 @@ pretrained_model = [
     "./results/pretrain-1/churyumov-gerasimenko/polyhedral/it-id-0004/best_model.mdl"
 ]
 seed = [
-    3, 7
+    99, 433
 ]
 ground_truth = [
     "polyhedral"

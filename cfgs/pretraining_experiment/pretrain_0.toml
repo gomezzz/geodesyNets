@@ -41,9 +41,9 @@ limit_domain = false
 domain = [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]]
 
 [training]
-iterations = 10000
+iterations = 1
 batch_size = [
-    1000
+    10
 ]
 learning_rate = [
     1e-4
@@ -53,7 +53,7 @@ loss = [
 ]
 validation_points = 1000
 validation_ground_truth = "polyhedral"
-validation_sampling_altitudes = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 50.0]
+validation_sampling_altitudes = []
 
 [target_sampling]
 method = [
