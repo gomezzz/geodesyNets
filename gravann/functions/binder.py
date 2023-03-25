@@ -1,4 +1,3 @@
-import inspect
 from typing import Callable, Union
 
 import torch
@@ -48,7 +47,8 @@ def bind_integration(
 _NOISE_METHOD_REGISTRY = {
     "gaussian": noise.gaussian_noise,
     "constant_bias": noise.constant_bias,
-    "combined": noise.combined_noise
+    "combined": noise.combined_noise,
+    "adaptive_gaussian_noise": noise.adaptive_gaussian_noise
 }
 
 
