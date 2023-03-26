@@ -15,7 +15,7 @@ pretrained_model = [
     "./results/pretrain-1/churyumov-gerasimenko/polyhedral/it-id-0004/best_model.mdl"
 ]
 seed = [
-    99, 433
+    37
 ]
 ground_truth = [
     "polyhedral"
@@ -29,7 +29,10 @@ noise = [
     ["gaussian", 0.0, 1.467314],
     ["constant_bias", [0.000272, 0.0, 0.0]],
     ["combined", 0.0, 0.146731, [0.000272, 0.0, 0.0]],
-    ["combined", 0.0, 1.467314, [0.000272, 0.0, 0.0]]
+    ["combined", 0.0, 1.467314, [0.000272, 0.0, 0.0]],
+    ["adaptive_gaussian_noise", 0.1],
+    ["adaptive_gaussian_noise", 0.01],
+    ["adaptive_gaussian_noise", 0.001]
 ]
 [model]
 activation = [
