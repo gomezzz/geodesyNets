@@ -45,21 +45,22 @@ def load_sample(sample: str, use_differential: bool = False) -> torch.Tensor:
     return mascon_points, mascon_masses_u, mascon_masses_nu
 
 
-def load_polyhedral_mesh(sample: str, version: str = "") -> (np.ndarray, np.ndarray):
+def load_polyhedral_mesh(sample: str, version: str = "100%") -> (np.ndarray, np.ndarray):
     """Loads a polyhedral mesh for a given sample from the '3dmeshes' folder.
 
     Args:
         sample: the name of file/ sample
-        version: either nothing (normal mesh version, 100%) or lp (low-poly, 10%) or vlp (very low poly, 1%)
+        version: either '100%' (normal mesh, default value) or '10%' (low-poly) or '1%' or '0.1%'
 
     Returns:
         tuple of vertices (N, 3), triangles (M, 3)
 
     """
     suffix = {
-        "": "",
-        "lp": "_lp",
-        "vlp": "_llp"
+        "100%": "",
+        "10%": "_lp",
+        "1%": "_llp",
+        "0.1%": "_lllp"
     }
     with open(f"./3dmeshes/{sample}{suffix[version]}.pk", "rb") as f:
         vertices, triangles = pk.load(f)
