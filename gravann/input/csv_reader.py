@@ -1,13 +1,14 @@
 import os
-from typing import Union, List
+from typing import List, Optional
 
 import pandas as pd
 
 
 def read_result_csv(
         root_directory: os.PathLike,
-        include: Union[List[str], None] = None,
-        exclude: Union[List[str], None] = None
+        include: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+        files: Optional[List[str]] = None
 ) -> pd.DataFrame:
     """This method reads all csv files in a given root directory, where the sub-path contains a specific pattern.
 
@@ -15,6 +16,7 @@ def read_result_csv(
         root_directory: the root directory from which to recursively search for csv files
         include: the patterns the sub-path must contain
         exclude: the patterns the sub-paths is not allowed to contain
+        files: a number of files to include anyway
 
     Returns:
         pandas DataFrame of concatenated csv files
@@ -29,4 +31,8 @@ def read_result_csv(
             if any(x in path for x in include) and not any(x in path for x in exclude):
                 element = pd.read_csv(path)
                 dataframe = pd.concat([dataframe, element], ignore_index=True)
+    if files is not None:
+        for filename in files:
+            element = pd.read_csv(os.path.join(filename))
+            dataframe = pd.concat([dataframe, element], ignore_index=True)
     return dataframe
