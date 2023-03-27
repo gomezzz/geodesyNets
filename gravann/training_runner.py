@@ -71,7 +71,7 @@ def run(cfg: Dict, stop_running: Optional[Callable[[], bool]] = None, cuda_devic
                 # Chosen Ground Truth
                 ########################################################################################################
                 "ground_truth": ground_truth,
-                "low_resolution": cfg.get("low_resolution", False),
+                "resolution": cfg.get("resolution", "100%"),
                 ########################################################################################################
                 # Training configuration & Validation Configuration
                 ########################################################################################################

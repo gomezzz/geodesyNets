@@ -63,7 +63,7 @@ def run_training_configuration(cfg: Dict) -> pd.DataFrame:
         method=cfg["ground_truth"],
         use_acc=cfg["use_acceleration"],
         sample=cfg["sample"],
-        low_resolution=cfg["low_resolution"]
+        resolution=cfg["resolution"]
     )
     # Add noise on top (if defined)
     label_fn = function_binder.bind_noise(
