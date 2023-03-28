@@ -20,7 +20,8 @@ def error_calculation(model_root_path, n_list, max_bound=1.0):
         limit_shape_to_asteroid=f"./3dmeshes/{sample}_lp.pk"
     )
     target_points = target_points_sampler()
-    errors = []
+    true_value = label_fn(target_points)
+    errors = {}
     for n in n_list:
         integration_fn = function_binder.bind_integration(
             method='trapezoid',
@@ -30,12 +31,11 @@ def error_calculation(model_root_path, n_list, max_bound=1.0):
             integration_points=n,
             integration_domain=[[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]],
         )
-        errors.append(_calculate_relative_error(label_fn, integration_fn, target_points, c=cfg["c"].to("cpu")))
-    print(errors)
+        errors[n] = _calculate_relative_error(true_value, integration_fn, target_points, c=cfg["c"].to("cpu"))
+    return errors
 
 
-def _calculate_relative_error(label_fn, integration_fn, target_points, c=1.0):
-    true_value = label_fn(target_points)
+def _calculate_relative_error(true_value, integration_fn, target_points, c=1.0):
     approximated_value = integration_fn(target_points) * c
 
     true_error = abs(true_value - approximated_value)
