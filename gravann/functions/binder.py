@@ -37,7 +37,7 @@ def bind_integration(
             points,
             model,
             encoding,
-            N=kwargs.get("integration_points", 50000),
+            N=kwargs.get("integration_points", 500000),
             domain=kwargs.get('integration_domain', None)
         )
     else:
