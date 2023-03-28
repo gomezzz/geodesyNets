@@ -3,7 +3,7 @@ cuda_devices = "0"
 plotting_points = 2500
 resolution = "0.1%"
 seed = [
-    3, 7, 9, 37, 42
+    3, 7, 9, 37, 42, 67, 99, 433, 1999, 2023
 ]
 ground_truth = [
     "polyhedral"
