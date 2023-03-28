@@ -1,18 +1,21 @@
-name = "pretrain-0"
-cuda_devices = "0"
+name = "polyhedral-total-eros-adaptive-noise-1"
+cuda_devices = "6"
 plotting_points = 2500
-resolution = "10%"
+resolution = "100%"
 seed = [
-    3, 7, 9, 37, 42
+    9, 37
 ]
 ground_truth = [
-    "polyhedral"
+    "polyhedral",
+    "mascon"
 ]
 samples = [
-    "churyumov-gerasimenko"
+    "eros"
 ]
 noise = [
-    [""]
+    ["adaptive_gaussian_noise", 0.1],
+    ["adaptive_gaussian_noise", 0.01],
+    ["adaptive_gaussian_noise", 0.001]
 ]
 [model]
 activation = [
@@ -60,5 +63,7 @@ method = [
     "spherical"
 ]
 domain = [
-    [0.0, 1.0]
+    [0.0, 1.0],
+    [1.0, 3.0],
+    [3.0, 5.0]
 ]

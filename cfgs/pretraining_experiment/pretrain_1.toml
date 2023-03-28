@@ -1,7 +1,7 @@
 name = "pretrain-1"
 cuda_devices = "1"
 plotting_points = 2500
-low_resolution = true
+resolution = "10%"
 seed = [
     67, 99, 433, 1999, 2023
 ]

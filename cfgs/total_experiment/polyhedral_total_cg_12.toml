@@ -1,6 +1,7 @@
 name = "polyhedral-total-cg-adaptive-noise-2"
 cuda_devices = "0"
 plotting_points = 2500
+resolution = "100%"
 seed = [
     42, 67
 ]
