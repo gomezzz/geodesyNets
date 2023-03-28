@@ -1,4 +1,4 @@
-name = "polyhedral-total-cg-adaptive-noise-1"
+name = "polyhedral-total-cg-adaptive-noise-2"
 cuda_devices = "0"
 plotting_points = 2500
 seed = [
