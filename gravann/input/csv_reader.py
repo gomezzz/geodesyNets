@@ -23,14 +23,15 @@ def read_result_csv(
 
     """
     dataframe = pd.DataFrame()
-    for dir_path, _, filenames in os.walk(root_directory):
-        for filename in filenames:
-            if not filename.endswith(".csv"):
-                continue
-            path = os.path.join(dir_path, filename)
-            if any(x in path for x in include) and not any(x in path for x in exclude):
-                element = pd.read_csv(path)
-                dataframe = pd.concat([dataframe, element], ignore_index=True)
+    if include is not None:
+        for dir_path, _, filenames in os.walk(root_directory):
+            for filename in filenames:
+                if not filename.endswith(".csv"):
+                    continue
+                path = os.path.join(dir_path, filename)
+                if all(x in path for x in include) and not any(x in path for x in exclude):
+                    element = pd.read_csv(path)
+                    dataframe = pd.concat([dataframe, element], ignore_index=True)
     if files is not None:
         for filename in files:
             element = pd.read_csv(os.path.join(filename))
