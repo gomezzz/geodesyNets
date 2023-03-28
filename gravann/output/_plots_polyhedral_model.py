@@ -3,58 +3,7 @@ import numpy as np
 import torch
 from matplotlib import pyplot as plt
 
-from gravann.functions import integration
-from gravann.input.sample_reader import load_polyhedral_mesh, load_mascon_data
-from gravann.labels import mascon, polyhedral
 from gravann.util import get_target_point_sampler
-
-
-def plot_compare_acceleration(sample: str, compare_mode: (str, str), **kwargs):
-    """Plots the relative error of the computed acceleration between a model/ ground truth and a model/ ground truth
-
-    Args:
-        sample: name of sampple body (acts a path to a mesh and mascon file if required)
-        compare_mode: tuple strings can be either 'mascon', 'polyhedral' or 'model'
-
-
-    Keyword Args:
-        model_1 [(model, encoding, c)]: needs to be specified if the first element of compare is set to 'model'
-        model_2 [(model, encoding, c)]: needs to be specified if the second element of compare is set to 'model'
-        plane (str): Either "XY","XZ" or "YZ". Defines  cross-section. Defaults to "XY".
-        altitude (float): Altitude to compute error at. Defaults to 0.1.
-        save_path (str): Pass to store plot, if none will display. Defaults to None.
-        N (int): Number of points to sample. Defaults to 5000.
-        logscale (bool): Logscale errors. Defaults to False.
-
-
-    Raises:
-        ValueError: On wrong input
-
-    Returns:
-        plt.Figure: created plot
-    """
-    # Get the vertices and triangles
-    mesh_vertices, mesh_triangles = load_polyhedral_mesh(sample)
-    # Get the mascon data
-    mascon_points, mascon_masses = load_mascon_data(sample)
-
-    # Get the models
-    model1, encoding1, c1 = kwargs.get('model_1', (None, None, 1))
-    model2, encoding2, c2 = kwargs.get('model_2', (None, None, 1))
-
-    integrator = integration.acceleration_trapezoid
-    label_dict1 = {
-        'mascon': lambda points: mascon.acceleration(points, mascon_points, mascon_masses),
-        'polyhedral': lambda points: polyhedral.acceleration(points, mesh_vertices, mesh_triangles),
-        'model': lambda points: integrator(points, model1, encoding1, N=200000) * c1,
-    }
-    label_dict2 = {
-        'mascon': lambda points: mascon.acceleration(points, mascon_points, mascon_masses),
-        'polyhedral': lambda points: polyhedral.acceleration(points, mesh_vertices, mesh_triangles),
-        'model': lambda points: integrator(points, model2, encoding2, N=200000) * c2
-    }
-    l1, l2 = compare_mode
-    return _plot_compare_acceleration(sample, label_dict1[l1], label_dict2[l2], **kwargs)
 
 
 def _plot_compare_acceleration(sample, label1, label2, **kwargs):
