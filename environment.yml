@@ -20,6 +20,7 @@ dependencies:
   - pytest-xdist
   - tomli
   - seaborn
+  - tetgen
   - pip
   - pip:
       - sobol_seq
