@@ -15,9 +15,9 @@ def error_calculation(model_root_path, n_list, max_bound=1.0):
     label_fn = label_binder.bind_label('polyhedral', True, sample=sample)
     target_points_sampler = get_target_point_sampler(
         100,
-        method='spherical',
-        bounds=[0.0, max_bound],
-        limit_shape_to_asteroid=f"./3dmeshes/{sample}_lp.pk"
+        method='altitude',
+        bounds=[max_bound],
+        limit_shape_to_asteroid=f"3dmeshes/{sample}_lp.pk"
     )
     target_points = target_points_sampler()
     true_value = label_fn(target_points)
@@ -31,12 +31,12 @@ def error_calculation(model_root_path, n_list, max_bound=1.0):
             integration_points=n,
             integration_domain=[[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]],
         )
-        errors[n] = _calculate_relative_error(true_value, integration_fn, target_points, c=cfg["c"].to("cpu"))
+        errors[n] = _calculate_relative_error(true_value, integration_fn, target_points)
     return errors
 
 
-def _calculate_relative_error(true_value, integration_fn, target_points, c=1.0):
-    approximated_value = integration_fn(target_points) * c
+def _calculate_relative_error(true_value, integration_fn, target_points):
+    approximated_value = integration_fn(target_points)
 
     true_error = abs(true_value - approximated_value)
 
