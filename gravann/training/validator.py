@@ -31,7 +31,7 @@ def validate(model, encoding, sample, ground_truth, use_acc=True, **kwargs):
         mesh_faces ((M, 3) array): mesh triangles
         N (int, optional): Number of evaluations per altitude. Defaults to 5000.
         sampling_altitudes (np.array, optional): Altitude to sample at for validation. Defaults to [0.05, 0.1, 0.25].
-        batch_size (int, optional): batch size (will split N in batches). Defaults to 32.
+        batch_size (int, optional): batch size (will split N in batches). Defaults to 100.
         russell_points (int , optional): how many points should be sampled per altitude for russel style radial projection sampling. Defaults to 3.
         progressbar (bool, optional): Display a progress. Defaults to True.
         noise (list) if given then the noise is added on the ground truth for validation
