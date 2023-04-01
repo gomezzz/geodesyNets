@@ -1,4 +1,4 @@
-name = "integration-cg-0"
+name = "polyhedral-total-seed-3"
 cuda_devices = "0"
 plotting_points = 2500
 seed = [
@@ -16,9 +16,8 @@ noise = [
     ["gaussian", 0.0, 0.146731],
     ["gaussian", 0.0, 1.467314],
     ["constant_bias", [0.000272, 0.0, 0.0]],
-    ["adaptive_gaussian_noise", 0.1],
-    ["adaptive_gaussian_noise", 0.01],
-    ["adaptive_gaussian_noise", 0.001]
+    ["combined", 0.0, 0.146731, [0.000272, 0.0, 0.0]],
+    ["combined", 0.0, 1.467314, [0.000272, 0.0, 0.0]]
 ]
 [model]
 activation = [
@@ -42,7 +41,7 @@ omega = [
 ]
 
 [integration]
-points = 1200000
+points = 300000
 limit_domain = false
 domain = [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]]
 
