@@ -1,4 +1,4 @@
-name = "integration-cg-0"
+name = "integration-cg-1"
 cuda_devices = "0"
 plotting_points = 2500
 seed = [
