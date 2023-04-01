@@ -116,7 +116,7 @@ def run_training_configuration(cfg: Dict) -> pd.DataFrame:
         "N": cfg["validation_points"],
         "progressbar": False,
         "sampling_altitudes": cfg["validation_sampling_altitudes"],
-        "integration_points": 500000
+        "integration_points": cfg["integration_points"]
     }
     validation_results = validator.validate(
         model,
