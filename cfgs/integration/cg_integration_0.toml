@@ -42,14 +42,14 @@ omega = [
 ]
 
 [integration]
-points = 400000
+points = 600000
 limit_domain = false
 domain = [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]]
 
 [training]
 iterations = 10000
 batch_size = [
-    1000
+    500
 ]
 learning_rate = [
     1e-4

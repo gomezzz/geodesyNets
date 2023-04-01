@@ -1,4 +1,4 @@
-name = "posttrain-10-100it"
+name = "posttrain-10-10it"
 cuda_devices = "0"
 plotting_points = 2500
 resolution = "100%"
@@ -59,7 +59,7 @@ limit_domain = false
 domain = [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]]
 
 [training]
-iterations = 100
+iterations = 10
 batch_size = [
     1000
 ]
