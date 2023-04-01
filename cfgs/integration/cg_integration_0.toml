@@ -42,7 +42,7 @@ omega = [
 ]
 
 [integration]
-points = 500000
+points = 400000
 limit_domain = false
 domain = [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]]
 
