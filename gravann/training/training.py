@@ -110,13 +110,18 @@ def run_training_configuration(cfg: Dict) -> pd.DataFrame:
     print("Restoring best checkpoint for validation...")
     model.load_state_dict(torch.load(os.path.join(run_folder, "best_model.mdl")))
 
+    print("Saving the config file...")
+    with open(os.path.join(run_folder, 'config.pk'), 'wb') as handle:
+        pk.dump(cfg, handle)
+
     # Compute the validation
     print("Validating...")
     validation_kwargs = {
         "N": cfg["validation_points"],
         "progressbar": False,
         "sampling_altitudes": cfg["validation_sampling_altitudes"],
-        "integration_points": cfg["integration_points"]
+        "integration_points": cfg["integration_points"],
+        "batch_size": cfg["validation_batch_size"]
     }
     validation_results = validator.validate(
         model,
@@ -135,12 +140,6 @@ def run_training_configuration(cfg: Dict) -> pd.DataFrame:
         lr_log, loss_log, weighted_average_log,
         n_inferences, run_folder, c, cfg["plotting_points"]
     )
-
-    cfg.update({
-        "c": c
-    })
-    with open(os.path.join(run_folder, 'config.pk'), 'wb') as handle:
-        pk.dump(cfg, handle)
 
     # Compute validation results
     val_res = validator.validation_results_unpack_df(validation_results)

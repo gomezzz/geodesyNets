@@ -83,6 +83,7 @@ def run(cfg: Dict, stop_running: Optional[Callable[[], bool]] = None, cuda_devic
                 "validation_ground_truth": cfg["training"]["validation_ground_truth"],
                 "use_acceleration": cfg["model"]["use_acceleration"],
                 "validation_sampling_altitudes": cfg["training"]["validation_sampling_altitudes"],
+                "validation_batch_size": cfg["training"].get("validation_batch_size", 100),
                 ########################################################################################################
                 # Model Configuration
                 ########################################################################################################
