@@ -58,7 +58,7 @@ def run(
 
         # If with_noise is given and set to True + the noise includes a constant bias
         noise_config = None
-        if kwargs.get("with_constant_noise", False) and config["noise"][0] != 'gaussian':
+        if kwargs.get("with_constant_noise", False):
             noise_config = config["noise"]
 
         # Validate
