@@ -21,6 +21,7 @@ def plot_polyhedral_meshes(save_path: PathLike, **kwargs):
     """
     resolution = ["100%", "10%", "1%", "0.1%"]
     plotter = pv.Plotter(shape=(2, 2))
+    pv.set_plot_theme("document")
     for i, res in enumerate(resolution):
         plot_polyhedral_mesh(
             jupyter_backend=None,
