@@ -14,8 +14,8 @@ dependencies:
   - pandas
   - polyhedral-gravity-model
   - pytorch
+  - cudatoolkit>=11.1
   - torchvision
-  - pytorch-cuda>=11.1
   - pytest
   - pytest-xdist
   - tomli
