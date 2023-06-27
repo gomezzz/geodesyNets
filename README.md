@@ -34,7 +34,7 @@ results in videos such as the one below, obtained using the gravitational signat
 
 Similarly, the video below refers to the results of differential training over a heterogenous Bennu model. Units are non dimensional.
 
-## Investigation of the robustness of the neural density fields
+## Investigation of the Robustness of Neural Density Fields
 
 ### Overview
 
