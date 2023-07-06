@@ -1,5 +1,5 @@
-import torch
-import numpy as np
+from os import PathLike
+from typing import List
 
 from gravann.input import model_reader
 from gravann.labels import binder as label_binder
@@ -8,7 +8,22 @@ from . import binder as function_binder
 from ..network import encodings
 
 
-def error_calculation(model_root_path, n_list, max_bound=1.0):
+def error_calculation(model_root_path: PathLike, n_list: List, max_bound: float = 1.0):
+    """Calculate the relative error of the integration function for several models in
+    a given directory.
+
+    Notes:
+        Experimental function! This has not been part of the study!
+
+    Args:
+        model_root_path:    Path to the directory containing the models.
+        n_list:             List of how many integration points to use.
+        max_bound:          Maximum bound of the sampling domain.
+
+    Returns:
+        Dictionary of the form {n: error} where n is the number of integration points
+
+    """
     model, cfg = model_reader.read_models(model_root_path)[0]
     encoding = encodings.get_encoding(deep_get(cfg, ["Encoding", "encoding"]))
     sample = deep_get(cfg, ["Sample", "sample"])
@@ -36,6 +51,7 @@ def error_calculation(model_root_path, n_list, max_bound=1.0):
 
 
 def _calculate_relative_error(true_value, integration_fn, target_points):
+    """Calculate the relative error of the integration function compared to the ground truth."""
     approximated_value = integration_fn(target_points)
 
     true_error = abs(true_value - approximated_value)
