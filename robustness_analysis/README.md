@@ -15,7 +15,7 @@ This folder contains all the results obtained with the code in this repository. 
 
 These contain everything! They are basically concatenations of all `csv` files obtained over the course of the study.
 
-The other `csv` files respectivley contain the `mean` values for specific grouping configurations.
+The other `csv` files respectively contain the `mean` values for specific grouping configurations.
 
 ## Archive
 
