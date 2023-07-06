@@ -10,6 +10,14 @@ from gravann.training import training as trainer
 from gravann.util import get_asteroid_bounding_box, enableCUDA
 
 
+def patch_legacy_config(cfg: Dict) -> Dict:
+    """This function patches the legacy config files to the new format"""
+    if not isinstance(cfg["training"]["iterations"], list):
+        cfg["training"]["iterations"] = [cfg["training"]["iterations"]]
+
+    return cfg
+
+
 def run(cfg: Dict, stop_running: Optional[Callable[[], bool]] = None, cuda_device: str = "0") -> None:
     """This function runs all the permutations of above settings
     """
@@ -21,8 +29,7 @@ def run(cfg: Dict, stop_running: Optional[Callable[[], bool]] = None, cuda_devic
     print("Will use device ", os.environ["TORCH_DEVICE"])
 
     # Legacy support for old config files
-    if not isinstance(cfg["training"]["iterations"], list):
-        cfg["training"]["iterations"] = [cfg["training"]["iterations"]]
+    cfg = patch_legacy_config(cfg)
 
     iterable_parameters = [
         cfg["seed"],
