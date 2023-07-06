@@ -26,9 +26,13 @@ This directory contains the configuration files for the robustness analysis.
 
 - `polyhedral_total_churyumov-gerasimenko.toml`: Configuration file for the robustness analysis of the
   Churyumov-Gerasimenko comet.
+  Contains the extensive experiment with different kinds of perturbations,
+  varying sample domain and ground-truth models.
 - `polyhedral_total_eros.toml`: Configuration file for the robustness analysis of the Eros asteroid.
+  Contains the extensive experiment with different kinds of perturbations,
+  varying sample domain and ground-truth models.
 - `pretraining_experiment_churyumov-gerasimenko`: Directory containing the results of the pretraining & fine-tuning
-  experiment for the Churyumov-Gerasimenko comet.
+  experiment for the Churyumov-Gerasimenko comet. Further it varies the resolution and amount of training iterations.
     - `res001`: Results of the experiment with a resolution of 1%
     - `res010`: Results of the experiment with a resolution of 10%
     - `res0_1`: Results of the experiment with a resolution of 0.1%
