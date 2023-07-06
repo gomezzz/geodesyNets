@@ -1,13 +1,8 @@
-name = "polyhedral-total-cg-adaptive-noise-2"
+name = "integration-cg-1"
 cuda_devices = "0"
 plotting_points = 2500
-resolution = "100%"
 seed = [
-    # 3, 7
-    # 9, 37
-    42, 67
-    # 99, 433
-    # 1999, 2023
+    3, 7
 ]
 ground_truth = [
     "polyhedral",
@@ -17,6 +12,10 @@ samples = [
     "churyumov-gerasimenko"
 ]
 noise = [
+    [""],
+    ["gaussian", 0.0, 0.146731],
+    ["gaussian", 0.0, 1.467314],
+    ["constant_bias", [0.000272, 0.0, 0.0]],
     ["adaptive_gaussian_noise", 0.1],
     ["adaptive_gaussian_noise", 0.01],
     ["adaptive_gaussian_noise", 0.001]
@@ -43,14 +42,14 @@ omega = [
 ]
 
 [integration]
-points = 300000
+points = 600000
 limit_domain = false
 domain = [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]]
 
 [training]
 iterations = 10000
 batch_size = [
-    1000
+    32
 ]
 learning_rate = [
     1e-4
@@ -61,7 +60,7 @@ loss = [
 validation_points = 10000
 validation_ground_truth = "polyhedral"
 validation_sampling_altitudes = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 50.0]
-
+validation_batch_size = 32
 [target_sampling]
 method = [
     "spherical"

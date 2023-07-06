@@ -1,23 +1,18 @@
-name = "polyhedral-total-eros-seed-1999"
-cuda_devices = "6"
+name = "pretrain-0"
+cuda_devices = "0"
 plotting_points = 2500
+resolution = "10%"
 seed = [
-    1999
+    3, 7, 9, 37, 42, 67, 99, 433, 1999, 2023
 ]
 ground_truth = [
-    "polyhedral",
-    "mascon"
+    "polyhedral"
 ]
 samples = [
-    "eros"
+    "churyumov-gerasimenko"
 ]
 noise = [
-    [""],
-    ["gaussian", 0.0, 0.009337],
-    ["gaussian", 0.0, 0.093371],
-    ["constant_bias", [0.0000979917, 0.0, 0.0]],
-    ["combined", 0.0, 0.009337, [0.0000979917, 0.0, 0.0]],
-    ["combined", 0.0, 0.093371, [0.0000979917, 0.0, 0.0]]
+    [""]
 ]
 [model]
 activation = [
@@ -65,7 +60,5 @@ method = [
     "spherical"
 ]
 domain = [
-    [0.0, 1.0],
-    [1.0, 3.0],
-    [3.0, 5.0]
+    [0.0, 1.0]
 ]

@@ -1,18 +1,26 @@
-name = "pretrain-0"
+name = "polyhedral-total-churyumov-gerasimenko"
 cuda_devices = "0"
 plotting_points = 2500
-resolution = "10%"
 seed = [
-    3, 7, 9, 37, 42
+    3, 7, 9, 37, 42, 67, 99, 433, 1999, 2023
 ]
 ground_truth = [
-    "polyhedral"
+    "polyhedral",
+    "mascon"
 ]
 samples = [
     "churyumov-gerasimenko"
 ]
 noise = [
-    [""]
+    [""],
+    ["gaussian", 0.0, 0.146731],
+    ["gaussian", 0.0, 1.467314],
+    ["constant_bias", [0.000272, 0.0, 0.0]],
+    ["combined", 0.0, 0.146731, [0.000272, 0.0, 0.0]],
+    ["combined", 0.0, 1.467314, [0.000272, 0.0, 0.0]],
+    ["adaptive_gaussian_noise", 0.1],
+    ["adaptive_gaussian_noise", 0.01],
+    ["adaptive_gaussian_noise", 0.001]
 ]
 [model]
 activation = [
@@ -60,5 +68,7 @@ method = [
     "spherical"
 ]
 domain = [
-    [0.0, 1.0]
+    [0.0, 1.0],
+    [1.0, 3.0],
+    [3.0, 5.0]
 ]
