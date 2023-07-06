@@ -17,7 +17,7 @@ noise = [
     ["gaussian", 0.0, 0.093371],
     ["constant_bias", [0.0000979917, 0.0, 0.0]],
     ["combined", 0.0, 0.009337, [0.0000979917, 0.0, 0.0]],
-    ["combined", 0.0, 0.093371, [0.0000979917, 0.0, 0.0]]
+    ["combined", 0.0, 0.093371, [0.0000979917, 0.0, 0.0]],
     ["adaptive_gaussian_noise", 0.1],
     ["adaptive_gaussian_noise", 0.01],
     ["adaptive_gaussian_noise", 0.001]
