@@ -20,11 +20,16 @@ def run(cfg: Dict, stop_running: Optional[Callable[[], bool]] = None, cuda_devic
     print("Using the following samples:", cfg["samples"])
     print("Will use device ", os.environ["TORCH_DEVICE"])
 
+    # Legacy support for old config files
+    if not isinstance(cfg["training"]["iterations"], list):
+        cfg["training"]["iterations"] = [cfg["training"]["iterations"]]
+
     iterable_parameters = [
         cfg["seed"],
         cfg.get("pretrained_model", [""]),
         cfg["ground_truth"],
         cfg["noise"],
+        cfg["training"]["iterations"],
         cfg["training"]["loss"],
         cfg["training"]["batch_size"],
         cfg["training"]["learning_rate"],
@@ -46,7 +51,7 @@ def run(cfg: Dict, stop_running: Optional[Callable[[], bool]] = None, cuda_devic
             cfg["integration"]["domain"] = get_asteroid_bounding_box(asteroid_pk_path=f"3dmeshes/{sample}.pk")
         for it, (
                 seed, pretrained_model, ground_truth, noise,
-                loss, batch_size, learning_rate,
+                iterations, loss, batch_size, learning_rate,
                 encoding, activation, hidden_layers, n_neurons,
                 omega,
                 sample_method, sample_domain,
@@ -78,7 +83,7 @@ def run(cfg: Dict, stop_running: Optional[Callable[[], bool]] = None, cuda_devic
                 "loss": loss,
                 "batch_size": batch_size,
                 "learning_rate": learning_rate,
-                "iterations": cfg["training"]["iterations"],
+                "iterations": iterations,
                 "validation_points": cfg["training"]["validation_points"],
                 "validation_ground_truth": cfg["training"]["validation_ground_truth"],
                 "use_acceleration": cfg["model"]["use_acceleration"],

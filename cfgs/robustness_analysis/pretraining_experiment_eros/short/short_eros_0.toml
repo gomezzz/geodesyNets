@@ -47,7 +47,7 @@ limit_domain = false
 domain = [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]]
 
 [training]
-iterations = 10
+iterations = [10, 100]
 batch_size = [
     1000
 ]

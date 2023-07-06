@@ -1,4 +1,4 @@
-name = "short-cg-0100"
+name = "short-cg-0010"
 cuda_devices = "3"
 plotting_points = 2500
 seed = [
@@ -47,7 +47,7 @@ limit_domain = false
 domain = [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]]
 
 [training]
-iterations = 100
+iterations = [10, 100]
 batch_size = [
     1000
 ]

@@ -1,18 +1,18 @@
-name = "posttrain-eros-010-1000it"
+name = "posttrain-eros-0_1-1000it"
 cuda_devices = "0"
 plotting_points = 2500
 resolution = "100%"
 pretrained_model = [
-    "./results/pretrain-eros-res010/eros/polyhedral/it-id-0000/best_model.mdl",
-    "./results/pretrain-eros-res010/eros/polyhedral/it-id-0001/best_model.mdl",
-    "./results/pretrain-eros-res010/eros/polyhedral/it-id-0002/best_model.mdl",
-    "./results/pretrain-eros-res010/eros/polyhedral/it-id-0003/best_model.mdl",
-    "./results/pretrain-eros-res010/eros/polyhedral/it-id-0004/best_model.mdl",
-    "./results/pretrain-eros-res010/eros/polyhedral/it-id-0005/best_model.mdl",
-    "./results/pretrain-eros-res010/eros/polyhedral/it-id-0006/best_model.mdl",
-    "./results/pretrain-eros-res010/eros/polyhedral/it-id-0007/best_model.mdl",
-    "./results/pretrain-eros-res010/eros/polyhedral/it-id-0008/best_model.mdl",
-    "./results/pretrain-eros-res010/eros/polyhedral/it-id-0009/best_model.mdl"
+    "./results/pretrain-eros-res0_1/eros/polyhedral/it-id-0000/best_model.mdl",
+    "./results/pretrain-eros-res0_1/eros/polyhedral/it-id-0001/best_model.mdl",
+    "./results/pretrain-eros-res0_1/eros/polyhedral/it-id-0002/best_model.mdl",
+    "./results/pretrain-eros-res0_1/eros/polyhedral/it-id-0003/best_model.mdl",
+    "./results/pretrain-eros-res0_1/eros/polyhedral/it-id-0004/best_model.mdl",
+    "./results/pretrain-eros-res0_1/eros/polyhedral/it-id-0005/best_model.mdl",
+    "./results/pretrain-eros-res0_1/eros/polyhedral/it-id-0006/best_model.mdl",
+    "./results/pretrain-eros-res0_1/eros/polyhedral/it-id-0007/best_model.mdl",
+    "./results/pretrain-eros-res0_1/eros/polyhedral/it-id-0008/best_model.mdl",
+    "./results/pretrain-eros-res0_1/eros/polyhedral/it-id-0009/best_model.mdl"
 ]
 seed = [
     3
@@ -59,7 +59,7 @@ limit_domain = false
 domain = [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]]
 
 [training]
-iterations = 1000
+iterations = [1000, 100, 10]
 batch_size = [
     1000
 ]
