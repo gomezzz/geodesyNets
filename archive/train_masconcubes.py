@@ -1,9 +1,11 @@
-import pickle as pk
-import torch
-import gravann
-import numpy as np
-from copy import deepcopy
 import os
+import pickle as pk
+from copy import deepcopy
+
+import numpy as np
+import torch
+
+import gravann
 
 if __name__ == "__main__":
 
@@ -78,15 +80,14 @@ if __name__ == "__main__":
             if (i % 10 == 0):
                 target_points = targets_point_sampler()
                 # We compute the labels whenever the target points are changed
-                labels = gravann.ACC_L(
-                    target_points, mascon_points, mascon_masses)
+                labels = gravann.acceleration_mascon_differential(target_points, mascon_points, mascon_masses)
 
             # We compute the values predicted by the neural density field
-            predicted = gravann.ACC_L(
-                target_points, mascon_cube_points, mascon_cube_masses*mascon_cube_masses)
+            predicted = gravann.acceleration_mascon_differential(target_points, mascon_cube_points,
+                                                                 mascon_cube_masses * mascon_cube_masses)
 
             # We compute the scaling constant (k in the paper) used in the loss
-            c = torch.sum(predicted*labels)/torch.sum(predicted*predicted)
+            c = torch.sum(predicted * labels) / torch.sum(predicted * predicted)
 
             # We compute the loss
             loss = loss_fn(predicted.view(-1), labels.view(-1))
